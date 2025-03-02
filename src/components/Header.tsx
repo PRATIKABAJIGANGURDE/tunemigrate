@@ -11,7 +11,7 @@ const Header = () => {
     >
       <div className="flex items-center gap-3 logo-animation">
         <div className="flex items-center">
-          {/* YouTube Logo Container - Now with better styling */}
+          {/* YouTube Logo Container */}
           <motion.div 
             className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
             initial={{ scale: 0.9, opacity: 0 }}
@@ -23,17 +23,17 @@ const Header = () => {
             </svg>
           </motion.div>
 
-          {/* Improved Connection Between Logos */}
+          {/* Small Blue Connecting Line */}
           <div className="relative mx-1">
             <motion.div 
-              className="h-0.5 bg-gradient-to-r from-red-500 to-green-500 rounded-full"
+              className="h-0.5 bg-primary rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: "2.5rem" }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              animate={{ width: "1.5rem" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             />
           </div>
 
-          {/* Spotify Logo Container - Now with better styling */}
+          {/* Spotify Logo Container */}
           <motion.div 
             className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
             initial={{ scale: 0.9, opacity: 0 }}
