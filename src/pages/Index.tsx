@@ -17,44 +17,13 @@ import SpotifyAuth from "@/components/SpotifyAuth";
 // Types
 import { ConversionStep, Song, PlaylistData } from "@/types";
 
-// Mock data for demonstration
-const MOCK_SONGS: Song[] = [
-  {
-    id: uuidv4(),
-    title: "Bohemian Rhapsody",
-    artist: "Queen",
-    selected: true,
-    thumbnail: "https://i.ytimg.com/vi/fJ9rUzIMcZQ/mqdefault.jpg"
-  },
-  {
-    id: uuidv4(),
-    title: "Hotel California",
-    artist: "Eagles",
-    selected: true,
-    thumbnail: "https://i.ytimg.com/vi/EqPtz5qN7HM/mqdefault.jpg"
-  },
-  {
-    id: uuidv4(),
-    title: "Imagine",
-    artist: "John Lennon",
-    selected: true,
-    thumbnail: "https://i.ytimg.com/vi/YkgkThdzX-8/mqdefault.jpg"
-  },
-  {
-    id: uuidv4(),
-    title: "Billie Jean",
-    artist: "Michael Jackson",
-    selected: true,
-    thumbnail: "https://i.ytimg.com/vi/Zi_XLOBDo_Y/mqdefault.jpg"
-  },
-  {
-    id: uuidv4(),
-    title: "Sweet Child O' Mine",
-    artist: "Guns N' Roses",
-    selected: true,
-    thumbnail: "https://i.ytimg.com/vi/1w7OgIMMRc4/mqdefault.jpg"
-  }
-];
+// Services
+import { extractSongsFromPlaylist } from "@/services/youtubeService";
+import { 
+  isLoggedIn as isSpotifyLoggedIn, 
+  createSpotifyPlaylistFromSongs,
+  getAccessToken
+} from "@/services/spotifyService";
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<ConversionStep>(ConversionStep.INPUT_URL);
@@ -64,22 +33,36 @@ const Index = () => {
     title: "",
     songs: []
   });
+  const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
+  const [matchingStats, setMatchingStats] = useState<{ matched: number, total: number } | null>(null);
 
-  const handleUrlSubmit = (url: string) => {
+  // Check if user is logged in with Spotify
+  useEffect(() => {
+    setSpotifyConnected(isSpotifyLoggedIn());
+  }, []);
+
+  const handleUrlSubmit = async (url: string) => {
     setLoading(true);
     setCurrentStep(ConversionStep.EXTRACTING);
     
-    // Simulate API call to extract songs from YouTube
-    setTimeout(() => {
+    try {
+      // Extract songs from YouTube playlist
+      const extractedData = await extractSongsFromPlaylist(url);
+      
       setPlaylistData({
-        title: "My YouTube Playlist",
-        songs: MOCK_SONGS
+        title: extractedData.title,
+        songs: extractedData.songs
       });
       
       setLoading(false);
       setCurrentStep(ConversionStep.EDIT_SONGS);
-      toast.success("Songs extracted successfully!");
-    }, 2500);
+      toast.success(`${extractedData.songs.length} songs extracted successfully!`);
+    } catch (error) {
+      console.error("Error extracting songs:", error);
+      setLoading(false);
+      setCurrentStep(ConversionStep.INPUT_URL);
+      toast.error("Failed to extract songs from playlist");
+    }
   };
 
   const handleSongUpdate = (updatedSongs: Song[]) => {
@@ -93,7 +76,7 @@ const Index = () => {
     setCurrentStep(ConversionStep.NAME_PLAYLIST);
   };
 
-  const handlePlaylistNameSubmit = (name: string, description: string) => {
+  const handlePlaylistNameSubmit = async (name: string, description: string) => {
     setPlaylistData({
       ...playlistData,
       title: name,
@@ -110,25 +93,45 @@ const Index = () => {
     setCurrentStep(ConversionStep.CREATE_PLAYLIST);
     setLoading(true);
     
-    // Simulate API call to create Spotify playlist
-    setTimeout(() => {
+    try {
+      const accessToken = getAccessToken();
+      
+      if (!accessToken) {
+        throw new Error("Spotify access token not found");
+      }
+      
+      // Create Spotify playlist with the selected songs
+      const result = await createSpotifyPlaylistFromSongs(
+        accessToken,
+        name,
+        description || `Converted from YouTube with TuneMigrate`,
+        playlistData.songs
+      );
+      
+      setPlaylistUrl(result.playlistUrl);
+      setMatchingStats({
+        matched: result.matchedCount,
+        total: result.totalCount
+      });
+      
       setLoading(false);
       setCurrentStep(ConversionStep.COMPLETED);
+      
       toast.success("Playlist created successfully!", {
         duration: 5000,
       });
-    }, 3000);
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      setLoading(false);
+      setCurrentStep(ConversionStep.NAME_PLAYLIST);
+      toast.error("Failed to create playlist. Please try again.");
+    }
   };
 
   const handleSpotifyLogin = () => {
-    // Simulate Spotify authentication
-    setLoading(true);
-    
-    setTimeout(() => {
-      setSpotifyConnected(true);
-      setLoading(false);
-      toast.success("Connected to Spotify successfully!");
-    }, 1500);
+    // The actual login is handled in the SpotifyAuth component
+    // We just need to update the state when the callback signals success
+    setSpotifyConnected(true);
   };
 
   const handleStartOver = () => {
@@ -137,6 +140,15 @@ const Index = () => {
       title: "",
       songs: []
     });
+    setPlaylistUrl(null);
+    setMatchingStats(null);
+  };
+
+  const handleOpenSpotify = () => {
+    if (playlistUrl) {
+      window.open(playlistUrl, '_blank');
+      toast.info("Opening Spotify playlist...");
+    }
   };
 
   return (
@@ -249,9 +261,17 @@ const Index = () => {
                 </div>
                 
                 <h2 className="text-2xl font-bold mb-2">Playlist Created!</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your playlist "{playlistData.title}" has been successfully created on Spotify with {playlistData.songs.filter(s => s.selected).length} songs.
+                <p className="text-muted-foreground mb-2">
+                  Your playlist "{playlistData.title}" has been successfully created on Spotify!
                 </p>
+
+                {matchingStats && (
+                  <div className="mb-6 bg-muted/50 rounded-lg p-3">
+                    <p className="text-sm">
+                      <span className="font-medium">{matchingStats.matched}</span> of <span className="font-medium">{matchingStats.total}</span> songs were matched and added to your playlist.
+                    </p>
+                  </div>
+                )}
                 
                 <div className="flex gap-4">
                   <button 
@@ -262,9 +282,7 @@ const Index = () => {
                   </button>
                   <button
                     className="text-spotify font-medium hover:underline"
-                    onClick={() => {
-                      toast.info("Opening Spotify app...");
-                    }}
+                    onClick={handleOpenSpotify}
                   >
                     Open in Spotify
                   </button>

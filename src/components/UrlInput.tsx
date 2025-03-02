@@ -5,6 +5,7 @@ import AnimatedCard from "./AnimatedCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { extractPlaylistId } from "@/services/youtubeService";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -15,12 +16,6 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const validateUrl = (input: string): boolean => {
-    // Very basic YouTube playlist URL validation
-    const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.*playlist.*$/;
-    return youtubePattern.test(input);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -29,7 +24,8 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
       return;
     }
     
-    if (!validateUrl(url)) {
+    const playlistId = extractPlaylistId(url);
+    if (!playlistId) {
       setError("Please enter a valid YouTube playlist URL");
       toast.error("Invalid YouTube playlist URL");
       return;
