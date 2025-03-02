@@ -20,7 +20,7 @@ const Header = () => {
 
           {/* Improved Gradient Line */}
           <motion.div 
-            className="h-1 w-10 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500"
+            className="h-1 w-10 rounded-full bg-gradient-to-r from-red-500 via-orange-400 via-yellow-300 via-green-400 to-green-600 shadow-lg"
             initial={{ width: 0 }}
             animate={{ width: "2.5rem" }}
             transition={{ duration: 0.6, delay: 0.3 }}
