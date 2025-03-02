@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import AnimatedCard from "./AnimatedCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
