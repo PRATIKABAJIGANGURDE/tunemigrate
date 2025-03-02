@@ -11,10 +11,10 @@ const Header = () => {
     >
       <div className="flex items-center gap-3 logo-animation">
         <div className="flex items-center">
-          {/* YouTube Logo with Circle */}
+          {/* YouTube Logo Container - Now with better styling */}
           <motion.div 
-            className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg"
-            initial={{ scale: 0.8, opacity: 0 }}
+            className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
@@ -24,43 +24,19 @@ const Header = () => {
           </motion.div>
 
           {/* Improved Connection Between Logos */}
-          <div className="relative flex items-center mx-1">
-            {/* Base Line */}
+          <div className="relative mx-1">
             <motion.div 
-              className="h-1 w-8 bg-gray-200 rounded-full"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "2rem", opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              className="h-0.5 bg-gradient-to-r from-red-500 to-green-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: "2.5rem" }}
+              transition={{ duration: 0.6, delay: 0.3 }}
             />
-            
-            {/* Animated Gradient Overlay */}
-            <motion.div 
-              className="absolute top-0 left-0 h-1 w-8 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "2rem", opacity: 0.85 }}
-              transition={{ 
-                duration: 0.8, 
-                delay: 0.4,
-                ease: "easeInOut" 
-              }}
-            />
-            
-            {/* Animated Dots */}
-            <motion.div 
-              className="absolute top-0 left-0 w-full flex justify-between"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              <div className="h-3 w-3 -mt-1 rounded-full bg-red-500 shadow-sm" />
-              <div className="h-3 w-3 -mt-1 rounded-full bg-green-500 shadow-sm" />
-            </motion.div>
           </div>
 
-          {/* Spotify Logo with Circle */}
+          {/* Spotify Logo Container - Now with better styling */}
           <motion.div 
-            className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg"
-            initial={{ scale: 0.8, opacity: 0 }}
+            className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
