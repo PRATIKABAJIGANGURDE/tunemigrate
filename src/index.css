@@ -63,11 +63,11 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-md rounded-2xl shadow-glass transition-all duration-300;
+    @apply bg-white/70 backdrop-blur-md rounded-2xl shadow-md transition-all duration-300;
   }
   
   .glass-panel-hover {
-    @apply hover:bg-white/80 hover:shadow-glass-hover;
+    @apply hover:bg-white/80 hover:shadow-lg;
   }
 
   .text-balance {
