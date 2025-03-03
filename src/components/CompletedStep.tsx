@@ -7,13 +7,15 @@ interface CompletedStepProps {
   matchingStats: { matched: number; total: number } | null;
   onStartOver: () => void;
   onOpenSpotify: () => void;
+  reversed?: boolean;
 }
 
 const CompletedStep = ({ 
   playlistTitle, 
   matchingStats, 
   onStartOver, 
-  onOpenSpotify 
+  onOpenSpotify,
+  reversed = false
 }: CompletedStepProps) => {
   return (
     <motion.div
@@ -33,7 +35,7 @@ const CompletedStep = ({
         
         <h2 className="text-2xl font-bold mb-2">Playlist Created!</h2>
         <p className="text-muted-foreground mb-2">
-          Your playlist "{playlistTitle}" has been successfully created on Spotify!
+          Your playlist "{playlistTitle}" has been successfully created on {reversed ? "YouTube" : "Spotify"}!
         </p>
 
         {matchingStats && (
@@ -52,10 +54,10 @@ const CompletedStep = ({
             Convert Another Playlist
           </button>
           <button
-            className="text-spotify font-medium hover:underline"
+            className={`font-medium hover:underline ${reversed ? "text-youtube" : "text-spotify"}`}
             onClick={onOpenSpotify}
           >
-            Open in Spotify
+            Open in {reversed ? "YouTube" : "Spotify"}
           </button>
         </div>
       </AnimatedCard>
