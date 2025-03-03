@@ -43,7 +43,7 @@ const CreationStep = ({
           Finding and adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          Matching songs for best accuracy
+          Using advanced matching to find the most accurate songs
         </p>
       </AnimatedCard>
     </motion.div>
