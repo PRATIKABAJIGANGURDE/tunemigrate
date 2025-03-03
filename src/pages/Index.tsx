@@ -49,31 +49,19 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <div className="container max-w-4xl px-4 mx-auto">
-        <Header reversed={true} />
+    <div className="min-h-screen flex flex-col">
+      <div className="container max-w-3xl px-4 mx-auto">
+        <Header />
         
-        <div className="max-w-3xl mx-auto text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Convert Your Playlists</h1>
-          <p className="text-lg text-gray-600">
-            Transfer your favorite Spotify playlists to YouTube in just a few steps. 
-            Enter your playlist URL below to get started.
-          </p>
-        </div>
-        
-        <ProcessingSteps currentStep={currentStep} reversed={true} />
+        <ProcessingSteps currentStep={currentStep} />
         
         <AnimatePresence mode="wait">
           {currentStep === ConversionStep.INPUT_URL && (
-            <UrlInput 
-              onSubmit={handleUrlSubmit} 
-              loading={loading} 
-              reversed={true} 
-            />
+            <UrlInput onSubmit={handleUrlSubmit} loading={loading} />
           )}
           
           {currentStep === ConversionStep.EXTRACTING && (
-            <ExtractionStep reversed={true} />
+            <ExtractionStep />
           )}
           
           {currentStep === ConversionStep.EDIT_SONGS && (
@@ -97,7 +85,6 @@ const Index = () => {
             <CreationStep 
               playlistTitle={playlistData.title}
               selectedSongsCount={playlistData.songs.filter(s => s.selected).length}
-              reversed={true}
             />
           )}
           
@@ -107,13 +94,12 @@ const Index = () => {
               matchingStats={matchingStats}
               onStartOver={handleStartOver}
               onOpenSpotify={handleOpenSpotify}
-              reversed={true}
             />
           )}
         </AnimatePresence>
         
         <footer className="mt-auto py-8 text-center text-xs text-muted-foreground">
-          <p>TuneMigrate &copy; {new Date().getFullYear()} - Spotify to YouTube Converter</p>
+          <p>TuneMigrate &copy; {new Date().getFullYear()} - YouTube to Spotify Converter</p>
         </footer>
       </div>
     </div>

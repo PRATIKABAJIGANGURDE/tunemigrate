@@ -6,10 +6,9 @@ import LoadingIndicator from "./LoadingIndicator";
 interface CreationStepProps {
   playlistTitle: string;
   selectedSongsCount: number;
-  reversed?: boolean;
 }
 
-const CreationStep = ({ playlistTitle, selectedSongsCount, reversed = false }: CreationStepProps) => {
+const CreationStep = ({ playlistTitle, selectedSongsCount }: CreationStepProps) => {
   return (
     <motion.div
       key="create-playlist"
@@ -19,10 +18,7 @@ const CreationStep = ({ playlistTitle, selectedSongsCount, reversed = false }: C
       transition={{ duration: 0.3 }}
     >
       <AnimatedCard className="flex flex-col items-center justify-center py-16">
-        <LoadingIndicator 
-          text={reversed ? "Creating YouTube playlist" : "Creating Spotify playlist"} 
-          size="lg" 
-        />
+        <LoadingIndicator text="Creating Spotify playlist" size="lg" />
         <p className="mt-6 text-muted-foreground text-sm">
           Adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
