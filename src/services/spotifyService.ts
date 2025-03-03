@@ -1,4 +1,3 @@
-
 import { Song } from "@/types";
 
 const CLIENT_ID = "e4de652cc02f42d6b3bdfdc24e155fc6";
@@ -109,11 +108,46 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
 };
 
 /**
- * Search for a track on Spotify
+ * Clean song title to improve search accuracy
+ */
+const cleanSongTitle = (title: string): string => {
+  // Remove common patterns from YouTube titles that might affect search accuracy
+  return title
+    .replace(/\(Official Video\)/gi, '')
+    .replace(/\(Official Music Video\)/gi, '')
+    .replace(/\(Official Audio\)/gi, '')
+    .replace(/\(Lyrics\)/gi, '')
+    .replace(/\(Lyric Video\)/gi, '')
+    .replace(/\(Audio\)/gi, '')
+    .replace(/\(Visualizer\)/gi, '')
+    .replace(/\(Lyrics\/Lyric Video\)/gi, '')
+    .replace(/\[Official Video\]/gi, '')
+    .replace(/\[Official Music Video\]/gi, '')
+    .replace(/\[Official Audio\]/gi, '')
+    .replace(/\[Lyrics\]/gi, '')
+    .replace(/\[Lyric Video\]/gi, '')
+    .replace(/\[Audio\]/gi, '')
+    .replace(/\[Visualizer\]/gi, '')
+    .replace(/\[Lyrics\/Lyric Video\]/gi, '')
+    .replace(/ft\.|feat\./gi, '')
+    .replace(/\(ft\..*?\)/gi, '')
+    .replace(/\(feat\..*?\)/gi, '')
+    .replace(/HD|HQ/gi, '')
+    .replace(/\d{4}/, '') // Remove years
+    .replace(/\s+/g, ' ') // Remove excess whitespace
+    .trim();
+};
+
+/**
+ * Search for a track on Spotify with improved accuracy
  */
 export const searchTrack = async (query: string, accessToken: string): Promise<{ id: string; uri: string } | null> => {
-  const response = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`,
+  // Clean the query to improve match accuracy
+  const cleanedQuery = cleanSongTitle(query);
+  
+  // Try an exact search first
+  const exactResponse = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(cleanedQuery)}&type=track&limit=10`,
     {
       headers: {
         'Authorization': `Bearer ${accessToken}`
@@ -121,19 +155,56 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
     }
   );
   
-  if (!response.ok) {
-    throw new Error(`Failed to search for track: ${response.statusText}`);
+  if (!exactResponse.ok) {
+    throw new Error(`Failed to search for track: ${exactResponse.statusText}`);
   }
   
-  const data = await response.json();
+  const exactData = await exactResponse.json();
   
-  if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
+  if (exactData.tracks && exactData.tracks.items && exactData.tracks.items.length > 0) {
+    // Sort results by popularity to get the most recognized version
+    exactData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
+    
+    return {
+      id: exactData.tracks.items[0].id,
+      uri: exactData.tracks.items[0].uri
+    };
+  }
+  
+  // If exact search fails, try a more relaxed search by splitting artist and title
+  const parts = cleanedQuery.split('-');
+  let relaxedQuery = cleanedQuery;
+  
+  if (parts.length > 1) {
+    // If the title contains a dash, use the parts separately
+    relaxedQuery = parts.join(' ');
+  }
+  
+  const relaxedResponse = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(relaxedQuery)}&type=track&limit=10`,
+    {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    }
+  );
+  
+  if (!relaxedResponse.ok) {
+    throw new Error(`Failed to search for track: ${relaxedResponse.statusText}`);
+  }
+  
+  const relaxedData = await relaxedResponse.json();
+  
+  if (!relaxedData.tracks || !relaxedData.tracks.items || relaxedData.tracks.items.length === 0) {
     return null;
   }
   
+  // Sort results by popularity to get the most recognized version
+  relaxedData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
+  
   return {
-    id: data.tracks.items[0].id,
-    uri: data.tracks.items[0].uri
+    id: relaxedData.tracks.items[0].id,
+    uri: relaxedData.tracks.items[0].uri
   };
 };
 
@@ -221,6 +292,25 @@ export const addTracksToPlaylist = async (
 };
 
 /**
+ * Extract artist name from YouTube video title/artist
+ */
+const extractArtistName = (videoTitle: string, channelTitle: string): string => {
+  // Check if the title contains a dash (common format: "Artist - Title")
+  if (videoTitle.includes('-')) {
+    const parts = videoTitle.split('-');
+    return parts[0].trim();
+  }
+  
+  // Check if the channel title contains "Official" or "VEVO" which often indicates artist channels
+  if (channelTitle.includes('VEVO') || channelTitle.includes('Official')) {
+    return channelTitle.replace('VEVO', '').replace('Official', '').trim();
+  }
+  
+  // Default to channelTitle
+  return channelTitle;
+};
+
+/**
  * Find Spotify track URIs for a list of songs
  */
 export const findSpotifyTracks = async (songs: Song[], accessToken: string): Promise<Song[]> => {
@@ -229,9 +319,19 @@ export const findSpotifyTracks = async (songs: Song[], accessToken: string): Pro
   for (let i = 0; i < enhancedSongs.length; i++) {
     if (enhancedSongs[i].selected) {
       try {
-        // Search in format: "song title artist name"
-        const query = `${enhancedSongs[i].title} ${enhancedSongs[i].artist}`;
-        const result = await searchTrack(query, accessToken);
+        // Improve title and artist extraction
+        const title = cleanSongTitle(enhancedSongs[i].title);
+        const artist = extractArtistName(enhancedSongs[i].title, enhancedSongs[i].artist);
+        
+        // First try with title + artist
+        let query = `${title} ${artist}`;
+        let result = await searchTrack(query, accessToken);
+        
+        // If not found, try just with title
+        if (!result) {
+          query = title;
+          result = await searchTrack(query, accessToken);
+        }
         
         if (result) {
           enhancedSongs[i].spotifyId = result.id;
