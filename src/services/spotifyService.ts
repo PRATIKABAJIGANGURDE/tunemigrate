@@ -111,7 +111,6 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
  * Clean song title to improve search accuracy
  */
 const cleanSongTitle = (title: string): string => {
-  // Remove common patterns from YouTube titles that might affect search accuracy
   return title
     .replace(/\(Official Video\)/gi, '')
     .replace(/\(Official Music Video\)/gi, '')
@@ -142,7 +141,6 @@ const cleanSongTitle = (title: string): string => {
  * Search for a track on Spotify with improved accuracy
  */
 export const searchTrack = async (query: string, accessToken: string): Promise<{ id: string; uri: string } | null> => {
-  // Clean the query to improve match accuracy
   const cleanedQuery = cleanSongTitle(query);
   
   // Try an exact search first
@@ -165,10 +163,13 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
     // Sort results by popularity to get the most recognized version
     exactData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
     
-    return {
-      id: exactData.tracks.items[0].id,
-      uri: exactData.tracks.items[0].uri
-    };
+    // Check if the top result has a reasonable popularity to ensure we're not getting something random
+    if (exactData.tracks.items[0].popularity > 30) {
+      return {
+        id: exactData.tracks.items[0].id,
+        uri: exactData.tracks.items[0].uri
+      };
+    }
   }
   
   // If exact search fails, try a more relaxed search by splitting artist and title
@@ -202,10 +203,16 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
   // Sort results by popularity to get the most recognized version
   relaxedData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
   
-  return {
-    id: relaxedData.tracks.items[0].id,
-    uri: relaxedData.tracks.items[0].uri
-  };
+  // Only return a result if it has a reasonable popularity score
+  if (relaxedData.tracks.items[0].popularity > 40) {
+    return {
+      id: relaxedData.tracks.items[0].id,
+      uri: relaxedData.tracks.items[0].uri
+    };
+  }
+  
+  // Return null if no good match is found
+  return null;
 };
 
 /**
@@ -216,7 +223,6 @@ export const createPlaylist = async (
   name: string,
   description: string
 ): Promise<{ id: string; url: string }> => {
-  // First get user ID
   const userResponse = await fetch('https://api.spotify.com/v1/me', {
     headers: {
       'Authorization': `Bearer ${accessToken}`
@@ -230,7 +236,6 @@ export const createPlaylist = async (
   const userData = await userResponse.json();
   const userId = userData.id;
   
-  // Create playlist
   const response = await fetch(
     `https://api.spotify.com/v1/users/${userId}/playlists`,
     {
@@ -267,7 +272,6 @@ export const addTracksToPlaylist = async (
   playlistId: string,
   trackUris: string[]
 ): Promise<void> => {
-  // Split into chunks of 100 (Spotify's limit)
   for (let i = 0; i < trackUris.length; i += 100) {
     const chunk = trackUris.slice(i, i + 100);
     
@@ -292,22 +296,15 @@ export const addTracksToPlaylist = async (
 };
 
 /**
- * Extract artist name from YouTube video title/artist
+ * Extract artist name from YouTube video title
  */
-const extractArtistName = (videoTitle: string, channelTitle: string): string => {
-  // Check if the title contains a dash (common format: "Artist - Title")
+const extractArtistName = (videoTitle: string): string => {
   if (videoTitle.includes('-')) {
     const parts = videoTitle.split('-');
     return parts[0].trim();
   }
   
-  // Check if the channel title contains "Official" or "VEVO" which often indicates artist channels
-  if (channelTitle.includes('VEVO') || channelTitle.includes('Official')) {
-    return channelTitle.replace('VEVO', '').replace('Official', '').trim();
-  }
-  
-  // Default to channelTitle
-  return channelTitle;
+  return "";
 };
 
 /**
@@ -319,18 +316,17 @@ export const findSpotifyTracks = async (songs: Song[], accessToken: string): Pro
   for (let i = 0; i < enhancedSongs.length; i++) {
     if (enhancedSongs[i].selected) {
       try {
-        // Improve title and artist extraction
         const title = cleanSongTitle(enhancedSongs[i].title);
-        const artist = extractArtistName(enhancedSongs[i].title, enhancedSongs[i].artist);
+        const artist = extractArtistName(enhancedSongs[i].title);
         
-        // First try with title + artist
-        let query = `${title} ${artist}`;
-        let result = await searchTrack(query, accessToken);
-        
-        // If not found, try just with title
-        if (!result) {
-          query = title;
+        let result = null;
+        if (artist) {
+          const query = `${title} ${artist}`;
           result = await searchTrack(query, accessToken);
+        }
+        
+        if (!result) {
+          result = await searchTrack(title, accessToken);
         }
         
         if (result) {
@@ -355,18 +351,14 @@ export const createSpotifyPlaylistFromSongs = async (
   playlistDescription: string,
   songs: Song[]
 ): Promise<{ playlistUrl: string; matchedCount: number; totalCount: number }> => {
-  // Enhance songs with Spotify data
   const enhancedSongs = await findSpotifyTracks(songs, accessToken);
   
-  // Create a new playlist
   const playlist = await createPlaylist(accessToken, playlistName, playlistDescription);
   
-  // Get all spotify URIs for matched songs
   const trackUris = enhancedSongs
     .filter(song => song.selected && song.spotifyUri)
     .map(song => song.spotifyUri as string);
   
-  // Add tracks to the playlist
   if (trackUris.length > 0) {
     await addTracksToPlaylist(accessToken, playlist.id, trackUris);
   }
