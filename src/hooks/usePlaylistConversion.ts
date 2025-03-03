@@ -16,7 +16,8 @@ export const usePlaylistConversion = () => {
     songs: []
   });
   const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
-  const [matchingStats, setMatchingStats] = useState<{ matched: number, total: number } | null>(null);
+  const [matchingStats, setMatchingStats] = useState<{ matched: number; total: number } | null>(null);
+  const [conversionProgress, setConversionProgress] = useState(0);
 
   const handleUrlSubmit = async (url: string) => {
     setLoading(true);
@@ -69,6 +70,7 @@ export const usePlaylistConversion = () => {
     
     setCurrentStep(ConversionStep.CREATE_PLAYLIST);
     setLoading(true);
+    setConversionProgress(0);
     
     try {
       const accessToken = getAccessToken();
@@ -82,7 +84,10 @@ export const usePlaylistConversion = () => {
         accessToken,
         name,
         description || `Converted from YouTube with TuneMigrate`,
-        playlistData.songs
+        playlistData.songs,
+        (progress) => {
+          setConversionProgress(progress);
+        }
       );
       
       setPlaylistUrl(result.playlistUrl);
@@ -128,6 +133,7 @@ export const usePlaylistConversion = () => {
     playlistData,
     playlistUrl,
     matchingStats,
+    conversionProgress,
     handleUrlSubmit,
     handleSongUpdate,
     handleContinueToNaming,

@@ -132,9 +132,21 @@ const cleanSongTitle = (title: string): string => {
     .replace(/\(ft\..*?\)/gi, '')
     .replace(/\(feat\..*?\)/gi, '')
     .replace(/HD|HQ/gi, '')
-    .replace(/\d{4}/, '') // Remove years
-    .replace(/\s+/g, ' ') // Remove excess whitespace
+    .replace(/\d{4}/, '')
+    .replace(/\s+/g, ' ')
     .trim();
+};
+
+/**
+ * Extract artist name from YouTube video title
+ */
+const extractArtistName = (videoTitle: string): string => {
+  if (videoTitle.includes('-')) {
+    const parts = videoTitle.split('-');
+    return parts[0].trim();
+  }
+  
+  return "";
 };
 
 /**
@@ -143,75 +155,74 @@ const cleanSongTitle = (title: string): string => {
 export const searchTrack = async (query: string, accessToken: string): Promise<{ id: string; uri: string } | null> => {
   const cleanedQuery = cleanSongTitle(query);
   
-  // Try an exact search first
-  const exactResponse = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(cleanedQuery)}&type=track&limit=10`,
-    {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    }
-  );
+  // Try to extract artist name
+  const artist = extractArtistName(cleanedQuery);
   
-  if (!exactResponse.ok) {
-    throw new Error(`Failed to search for track: ${exactResponse.statusText}`);
+  // First attempt: search with artist if available
+  if (artist) {
+    try {
+      const artistTitleQuery = `${artist} ${cleanedQuery.replace(artist, '').trim()}`;
+      
+      const artistResponse = await fetch(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(artistTitleQuery)}&type=track&limit=5`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+      
+      if (artistResponse.ok) {
+        const artistData = await artistResponse.json();
+        if (artistData.tracks && artistData.tracks.items && artistData.tracks.items.length > 0) {
+          // Sort by popularity to get the most recognized version
+          artistData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
+          
+          // Only return if popularity is reasonable
+          if (artistData.tracks.items[0].popularity > 20) {
+            return {
+              id: artistData.tracks.items[0].id,
+              uri: artistData.tracks.items[0].uri
+            };
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in artist search:", error);
+      // Continue to next search approach
+    }
   }
   
-  const exactData = await exactResponse.json();
-  
-  if (exactData.tracks && exactData.tracks.items && exactData.tracks.items.length > 0) {
-    // Sort results by popularity to get the most recognized version
-    exactData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
+  // Second attempt: search with the whole cleaned title
+  try {
+    const response = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(cleanedQuery)}&type=track&limit=5`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }
+    );
     
-    // Check if the top result has a reasonable popularity to ensure we're not getting something random
-    if (exactData.tracks.items[0].popularity > 30) {
-      return {
-        id: exactData.tracks.items[0].id,
-        uri: exactData.tracks.items[0].uri
-      };
-    }
-  }
-  
-  // If exact search fails, try a more relaxed search by splitting artist and title
-  const parts = cleanedQuery.split('-');
-  let relaxedQuery = cleanedQuery;
-  
-  if (parts.length > 1) {
-    // If the title contains a dash, use the parts separately
-    relaxedQuery = parts.join(' ');
-  }
-  
-  const relaxedResponse = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(relaxedQuery)}&type=track&limit=10`,
-    {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
+    if (response.ok) {
+      const data = await response.json();
+      if (data.tracks && data.tracks.items && data.tracks.items.length > 0) {
+        // Sort by popularity
+        data.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
+        
+        if (data.tracks.items[0].popularity > 20) {
+          return {
+            id: data.tracks.items[0].id,
+            uri: data.tracks.items[0].uri
+          };
+        }
       }
     }
-  );
-  
-  if (!relaxedResponse.ok) {
-    throw new Error(`Failed to search for track: ${relaxedResponse.statusText}`);
+  } catch (error) {
+    console.error("Error in full title search:", error);
   }
   
-  const relaxedData = await relaxedResponse.json();
-  
-  if (!relaxedData.tracks || !relaxedData.tracks.items || relaxedData.tracks.items.length === 0) {
-    return null;
-  }
-  
-  // Sort results by popularity to get the most recognized version
-  relaxedData.tracks.items.sort((a: any, b: any) => b.popularity - a.popularity);
-  
-  // Only return a result if it has a reasonable popularity score
-  if (relaxedData.tracks.items[0].popularity > 40) {
-    return {
-      id: relaxedData.tracks.items[0].id,
-      uri: relaxedData.tracks.items[0].uri
-    };
-  }
-  
-  // Return null if no good match is found
+  // If we haven't found a good match, return null rather than a poor match
   return null;
 };
 
@@ -296,33 +307,26 @@ export const addTracksToPlaylist = async (
 };
 
 /**
- * Extract artist name from YouTube video title
- */
-const extractArtistName = (videoTitle: string): string => {
-  if (videoTitle.includes('-')) {
-    const parts = videoTitle.split('-');
-    return parts[0].trim();
-  }
-  
-  return "";
-};
-
-/**
  * Find Spotify track URIs for a list of songs
  */
-export const findSpotifyTracks = async (songs: Song[], accessToken: string): Promise<Song[]> => {
+export const findSpotifyTracks = async (
+  songs: Song[], 
+  accessToken: string,
+  progressCallback?: (progress: number) => void
+): Promise<Song[]> => {
   const enhancedSongs = [...songs];
+  const selectedSongs = enhancedSongs.filter(song => song.selected);
+  let processedCount = 0;
   
   for (let i = 0; i < enhancedSongs.length; i++) {
     if (enhancedSongs[i].selected) {
       try {
-        const title = cleanSongTitle(enhancedSongs[i].title);
-        const artist = extractArtistName(enhancedSongs[i].title);
+        const title = enhancedSongs[i].title;
+        const artist = extractArtistName(title);
         
         let result = null;
         if (artist) {
-          const query = `${title} ${artist}`;
-          result = await searchTrack(query, accessToken);
+          result = await searchTrack(`${artist} ${cleanSongTitle(title.replace(artist, ''))}`, accessToken);
         }
         
         if (!result) {
@@ -333,8 +337,18 @@ export const findSpotifyTracks = async (songs: Song[], accessToken: string): Pro
           enhancedSongs[i].spotifyId = result.id;
           enhancedSongs[i].spotifyUri = result.uri;
         }
+        
+        // Update progress
+        processedCount++;
+        if (progressCallback) {
+          progressCallback(Math.round((processedCount / selectedSongs.length) * 100));
+        }
       } catch (error) {
         console.error(`Error finding track "${enhancedSongs[i].title}":`, error);
+        processedCount++;
+        if (progressCallback) {
+          progressCallback(Math.round((processedCount / selectedSongs.length) * 100));
+        }
       }
     }
   }
@@ -349,9 +363,10 @@ export const createSpotifyPlaylistFromSongs = async (
   accessToken: string,
   playlistName: string,
   playlistDescription: string,
-  songs: Song[]
+  songs: Song[],
+  progressCallback?: (progress: number) => void
 ): Promise<{ playlistUrl: string; matchedCount: number; totalCount: number }> => {
-  const enhancedSongs = await findSpotifyTracks(songs, accessToken);
+  const enhancedSongs = await findSpotifyTracks(songs, accessToken, progressCallback);
   
   const playlist = await createPlaylist(accessToken, playlistName, playlistDescription);
   

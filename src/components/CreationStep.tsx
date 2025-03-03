@@ -14,7 +14,7 @@ const CreationStep = ({
   selectedSongsCount,
   currentProgress = 0
 }: CreationStepProps) => {
-  const progressPercent = Math.min(100, Math.round((currentProgress / selectedSongsCount) * 100));
+  const progressPercent = Math.min(100, currentProgress);
   
   return (
     <motion.div
@@ -26,14 +26,24 @@ const CreationStep = ({
     >
       <AnimatedCard className="flex flex-col items-center justify-center py-16">
         <LoadingIndicator text="Creating Spotify playlist" size="lg" />
+        
+        {progressPercent > 0 && (
+          <div className="w-full max-w-xs mt-6 bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div 
+              className="bg-primary h-2.5 rounded-full transition-all duration-300" 
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
+        )}
+        
         <p className="mt-4 text-sm font-medium">
-          {currentProgress > 0 ? `${progressPercent}% complete` : ''}
+          {progressPercent > 0 ? `${progressPercent}% complete` : ''}
         </p>
         <p className="mt-2 text-muted-foreground text-sm">
-          Adding {selectedSongsCount} songs to "{playlistTitle}"
+          Finding and adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          Enhanced matching for better song accuracy
+          Matching songs for best accuracy
         </p>
       </AnimatedCard>
     </motion.div>

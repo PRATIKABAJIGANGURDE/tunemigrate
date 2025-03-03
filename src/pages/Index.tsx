@@ -29,6 +29,7 @@ const Index = () => {
     playlistData,
     playlistUrl,
     matchingStats,
+    conversionProgress,
     handleUrlSubmit,
     handleSongUpdate,
     handleContinueToNaming,
@@ -85,6 +86,7 @@ const Index = () => {
             <CreationStep 
               playlistTitle={playlistData.title}
               selectedSongsCount={playlistData.songs.filter(s => s.selected).length}
+              currentProgress={conversionProgress}
             />
           )}
           
