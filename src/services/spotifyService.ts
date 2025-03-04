@@ -110,6 +110,7 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
 
 /**
  * Clean song title to improve search accuracy
+ * Enhanced to better remove channel names and clean metadata
  */
 const cleanSongTitle = (title: string): string => {
   // First, attempt to detect and remove channel names (usually ends with -, not in parentheses)
@@ -120,7 +121,7 @@ const cleanSongTitle = (title: string): string => {
   if (channelMatch) {
     // Only remove if what's before the dash looks like a channel name (not part of song title)
     const beforeDash = channelMatch[1].trim();
-    if (beforeDash.split(' ').length <= 4 && !beforeDash.includes('(') && !beforeDash.includes('[')) {
+    if (beforeDash.split(' ').length <= 5 && !beforeDash.includes('(') && !beforeDash.includes('[')) {
       cleanedTitle = channelMatch[2].trim();
     }
   }
@@ -131,17 +132,22 @@ const cleanSongTitle = (title: string): string => {
     .replace(/\(Official Video\)/gi, '')
     .replace(/\(Official Music Video\)/gi, '')
     .replace(/\(Official Audio\)/gi, '')
+    .replace(/\(Official Lyric Video\)/gi, '')
+    .replace(/\(Official Performance Video\)/gi, '')
     // Remove lyric markers
     .replace(/\(Lyrics\)/gi, '')
     .replace(/\(Lyric Video\)/gi, '')
     .replace(/\(Lyrics\/Lyric Video\)/gi, '')
     .replace(/\(with Lyrics\)/gi, '')
+    .replace(/\(ft\..*?\)/gi, '')
+    .replace(/\(feat\..*?\)/gi, '')
     // Remove video quality markers
     .replace(/\(Audio\)/gi, '')
     .replace(/\(Visualizer\)/gi, '')
     .replace(/\[Official Video\]/gi, '')
     .replace(/\[Official Music Video\]/gi, '')
     .replace(/\[Official Audio\]/gi, '')
+    .replace(/\[Official Lyric Video\]/gi, '')
     .replace(/\[Lyrics\]/gi, '')
     .replace(/\[Lyric Video\]/gi, '')
     .replace(/\[Audio\]/gi, '')
@@ -151,13 +157,15 @@ const cleanSongTitle = (title: string): string => {
     .replace(/\|\s*[A-Za-z0-9\s]+\s*Official/gi, '')
     .replace(/VEVO/gi, '')
     // Remove feat. mentions which Spotify often formats differently
-    .replace(/ft\.|feat\./gi, '')
-    .replace(/\(ft\..*?\)/gi, '')
-    .replace(/\(feat\..*?\)/gi, '')
+    .replace(/\s+ft\.|\s+feat\./gi, '')
     // Remove video quality markers
     .replace(/HD|HQ|4K|8K|1080p|720p/gi, '')
-    // Remove years
-    .replace(/\(\d{4}\)|\[\d{4}\]/, '')
+    // Remove years in parentheses and brackets
+    .replace(/\(\d{4}\)|\[\d{4}\]/g, '')
+    // Remove premiere/release labels
+    .replace(/\bpremiere\b|\brelease\b/gi, '')
+    // Remove special unicode characters that might affect search
+    .replace(/[^\w\s\(\)\[\]\-&]/g, ' ')
     // Clean up extra spaces
     .replace(/\s+/g, ' ')
     .trim();
@@ -165,65 +173,137 @@ const cleanSongTitle = (title: string): string => {
 
 /**
  * Detect if the song is a live version, remix, or cover
+ * Enhanced to detect more special version patterns
  */
 const detectSpecialVersion = (title: string): { 
   isLive: boolean; 
   isRemix: boolean;
   isCover: boolean;
+  isAcoustic: boolean;
 } => {
+  const lowerTitle = title.toLowerCase();
   return {
-    isLive: /\blive\b|\bconcert\b|\bperformance\b/i.test(title),
-    isRemix: /\bremix\b|\bedit\b|\bflip\b|\bmashup\b/i.test(title),
-    isCover: /\bcover\b|\btribute\b|\bversion by\b/i.test(title)
+    isLive: /\blive\b|\bconcert\b|\bperformance\b|\bunplugged\b|\bsession\b/i.test(lowerTitle),
+    isRemix: /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\bbootleg\b|\brework\b/i.test(lowerTitle),
+    isCover: /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(lowerTitle),
+    isAcoustic: /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(lowerTitle)
   };
 };
 
 /**
- * Extract artist name from YouTube video title
+ * Extract artist name from YouTube video title with improved pattern recognition
  */
 const extractArtistName = (videoTitle: string): string => {
-  // Look for pattern: Artist - Song Title
+  // Look for the most common pattern: Artist - Song Title
   const artistTitleMatch = videoTitle.match(/^(.+?)\s*-\s*(.+)$/);
   if (artistTitleMatch) {
     const potentialArtist = artistTitleMatch[1].trim();
     // Check if potential artist looks like an actual artist name (not too long)
-    if (potentialArtist.split(' ').length <= 4 && !potentialArtist.includes('(') && !potentialArtist.includes('[')) {
+    if (potentialArtist.split(' ').length <= 5 && !potentialArtist.includes('(') && !potentialArtist.includes('[')) {
       return potentialArtist;
     }
   }
   
-  // If no clear artist from pattern, return empty string
+  // Look for "by Artist" pattern
+  const byArtistMatch = videoTitle.match(/\bby\s+([^()\[\]]+)/i);
+  if (byArtistMatch) {
+    return byArtistMatch[1].trim();
+  }
+  
+  // If no clear artist from patterns, return empty string
   return "";
 };
 
 /**
+ * Extract song title (without artist name) with improved accuracy
+ */
+const extractSongTitle = (videoTitle: string, artistName: string): string => {
+  // If we have an artist name and the title follows the "Artist - Song" format
+  if (artistName) {
+    // Remove the artist and the dash
+    let title = videoTitle.replace(new RegExp(`^${artistName}\\s*-\\s*`, 'i'), '');
+    
+    // Clean up any featuring artists which might be in parentheses
+    title = title.replace(/\(ft\..*?\)/gi, '').replace(/\(feat\..*?\)/gi, '');
+    
+    // Clean up common YouTube title additions
+    return cleanSongTitle(title);
+  }
+  
+  // If we couldn't extract an artist, just clean the whole title
+  return cleanSongTitle(videoTitle);
+};
+
+/**
+ * Calculate similarity score between two strings
+ * Used for fuzzy matching of titles and artists
+ */
+const calculateSimilarity = (str1: string, str2: string): number => {
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+  
+  // Exact match
+  if (s1 === s2) return 100;
+  
+  // One is substring of the other
+  if (s1.includes(s2) || s2.includes(s1)) {
+    const longerLength = Math.max(s1.length, s2.length);
+    const shorterLength = Math.min(s1.length, s2.length);
+    return Math.floor((shorterLength / longerLength) * 100);
+  }
+  
+  // Simple word matching (how many words match between the two strings)
+  const words1 = s1.split(/\s+/);
+  const words2 = s2.split(/\s+/);
+  
+  let matchCount = 0;
+  for (const word1 of words1) {
+    if (word1.length <= 2) continue; // Skip very short words
+    if (words2.some(word2 => word2.includes(word1) || word1.includes(word2))) {
+      matchCount++;
+    }
+  }
+  
+  return Math.floor((matchCount / Math.max(words1.length, words2.length)) * 100);
+};
+
+/**
  * Advanced search for a track on Spotify with multiple fallbacks
+ * Enhanced with structured queries and fuzzy matching
  */
 export const searchTrack = async (query: string, accessToken: string): Promise<{ id: string; uri: string; popularity: number } | null> => {
+  // Clean the title to remove YouTube-specific formatting
   const cleanedQuery = cleanSongTitle(query);
-  const { isLive, isRemix, isCover } = detectSpecialVersion(cleanedQuery);
+  const specialVersion = detectSpecialVersion(cleanedQuery);
   
-  // Extract artist if possible
+  // Extract artist and song title components
   const artist = extractArtistName(cleanedQuery);
-  const songTitle = artist ? cleanedQuery.replace(artist + ' - ', '') : cleanedQuery;
+  let songTitle = extractSongTitle(cleanedQuery, artist);
   
-  // Create a structured search query
-  let searchResults = null;
+  console.log("Clean query:", cleanedQuery);
+  console.log("Extracted artist:", artist);
+  console.log("Extracted song title:", songTitle);
+  console.log("Special version:", specialVersion);
+  
+  // Store all search results to analyze and select the best match
+  let allResults: any[] = [];
   
   // STEP 1: Try searching with track: and artist: qualifiers (most precise)
   if (artist) {
     try {
       const structuredQuery = `track:${songTitle} artist:${artist}`;
+      console.log("Trying structured query:", structuredQuery);
+      
       const structuredResponse = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(structuredQuery)}&type=track&limit=10`,
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(structuredQuery)}&type=track&limit=15`,
         { headers: { 'Authorization': `Bearer ${accessToken}` }}
       );
       
       if (structuredResponse.ok) {
         const data = await structuredResponse.json();
         if (data.tracks?.items?.length > 0) {
-          // Filter and sort by popularity and matching criteria
-          searchResults = findBestMatch(data.tracks.items, songTitle, artist, isLive, isRemix, isCover);
+          console.log(`Found ${data.tracks.items.length} results with structured query`);
+          allResults = [...data.tracks.items];
         }
       }
     } catch (error) {
@@ -231,19 +311,25 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
     }
   }
   
-  // STEP 2: If no results, try searching with just title and artist as regular query
-  if (!searchResults && artist) {
+  // STEP 2: If few results, try searching with just title and artist as regular query
+  if (allResults.length < 5 && artist) {
     try {
       const query = `${songTitle} ${artist}`;
+      console.log("Trying basic query:", query);
+      
       const response = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=15`,
         { headers: { 'Authorization': `Bearer ${accessToken}` }}
       );
       
       if (response.ok) {
         const data = await response.json();
         if (data.tracks?.items?.length > 0) {
-          searchResults = findBestMatch(data.tracks.items, songTitle, artist, isLive, isRemix, isCover);
+          console.log(`Found ${data.tracks.items.length} results with basic query`);
+          // Add only new tracks we haven't seen yet
+          const existingIds = new Set(allResults.map(track => track.id));
+          const newTracks = data.tracks.items.filter((track: any) => !existingIds.has(track.id));
+          allResults = [...allResults, ...newTracks];
         }
       }
     } catch (error) {
@@ -251,18 +337,23 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
     }
   }
   
-  // STEP 3: Last resort - search with just the song title
-  if (!searchResults) {
+  // STEP 3: If still few results, search with just the song title
+  if (allResults.length < 5) {
     try {
+      console.log("Trying title-only query:", songTitle);
       const response = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(songTitle)}&type=track&limit=10`,
+        `https://api.spotify.com/v1/search?q=track:${encodeURIComponent(songTitle)}&type=track&limit=15`,
         { headers: { 'Authorization': `Bearer ${accessToken}` }}
       );
       
       if (response.ok) {
         const data = await response.json();
         if (data.tracks?.items?.length > 0) {
-          searchResults = findBestMatch(data.tracks.items, songTitle, artist || "", isLive, isRemix, isCover);
+          console.log(`Found ${data.tracks.items.length} results with title-only query`);
+          // Add only new tracks we haven't seen yet
+          const existingIds = new Set(allResults.map(track => track.id));
+          const newTracks = data.tracks.items.filter((track: any) => !existingIds.has(track.id));
+          allResults = [...allResults, ...newTracks];
         }
       }
     } catch (error) {
@@ -270,25 +361,39 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
     }
   }
   
-  return searchResults;
+  // If we found results, score them and find the best match
+  if (allResults.length > 0) {
+    const bestMatch = findBestMatch(allResults, songTitle, artist, specialVersion);
+    
+    if (bestMatch) {
+      console.log("Best match found:", bestMatch.name, "by", bestMatch.artists[0].name, "with score:", bestMatch.matchScore);
+      return {
+        id: bestMatch.id,
+        uri: bestMatch.uri,
+        popularity: bestMatch.popularity
+      };
+    }
+  }
+  
+  console.log("No good match found for:", query);
+  return null;
 };
 
 /**
- * Find the best matching track from search results
+ * Enhanced algorithm to find the best matching track from search results
+ * Uses a scoring system based on multiple criteria
  */
 const findBestMatch = (
   tracks: any[], 
   songTitle: string, 
   artist: string, 
-  isLive: boolean, 
-  isRemix: boolean, 
-  isCover: boolean
-): { id: string; uri: string; popularity: number } | null => {
+  specialVersion: { isLive: boolean; isRemix: boolean; isCover: boolean; isAcoustic: boolean }
+): any | null => {
   // Clean strings for comparison
   const cleanTitle = songTitle.toLowerCase();
-  const cleanArtist = artist.toLowerCase();
+  const cleanArtist = artist ? artist.toLowerCase() : '';
   
-  // Filter out tracks with very low popularity
+  // Filter out tracks with very low popularity as they are likely to be wrong matches
   const viableTracks = tracks.filter(track => track.popularity >= 20);
   
   if (viableTracks.length === 0) {
@@ -297,50 +402,70 @@ const findBestMatch = (
   
   // Score tracks by various criteria
   const scoredTracks = viableTracks.map(track => {
-    let score = 0;
-    
-    // Base score from Spotify's popularity metric (0-100)
-    score += track.popularity;
-    
     const trackName = track.name.toLowerCase();
     const trackArtists = track.artists.map((a: any) => a.name.toLowerCase());
     
-    // Title match score
-    if (trackName === cleanTitle) {
-      score += 50; // Perfect title match
-    } else if (trackName.includes(cleanTitle) || cleanTitle.includes(trackName)) {
-      score += 25; // Partial title match
-    }
+    // Start with the popularity as base score (0-100)
+    let score = track.popularity;
+    
+    // Title similarity score (0-100)
+    const titleSimilarity = calculateSimilarity(trackName, cleanTitle);
+    score += titleSimilarity * 2; // Weight title similarity highly
     
     // Artist match score
-    if (cleanArtist && trackArtists.some(a => a === cleanArtist || a.includes(cleanArtist) || cleanArtist.includes(a))) {
-      score += 50; // Artist match
+    let artistScore = 0;
+    if (cleanArtist) {
+      // Try to find best matching artist among track artists
+      const artistSimilarities = trackArtists.map(a => calculateSimilarity(a, cleanArtist));
+      artistScore = Math.max(...artistSimilarities);
+      score += artistScore * 2; // Weight artist match highly
     }
     
-    // Special version handling (live, remix, cover)
-    const trackIsLive = /\blive\b|\bconcert\b|\bperformance\b/i.test(trackName);
-    const trackIsRemix = /\bremix\b|\bedit\b|\bflip\b|\bmashup\b/i.test(trackName);
-    const trackIsCover = /\bcover\b|\btribute\b|\bversion by\b/i.test(trackName);
+    // Special version handling (live, remix, cover, acoustic)
+    const trackIsLive = /\blive\b|\bconcert\b|\bperformance\b|\bunplugged\b|\bsession\b/i.test(trackName);
+    const trackIsRemix = /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\brework\b/i.test(trackName);
+    const trackIsCover = /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(trackName);
+    const trackIsAcoustic = /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(trackName);
     
     // Penalize mismatches in special versions
-    if (isLive !== trackIsLive) score -= 20;
-    if (isRemix !== trackIsRemix) score -= 20;
-    if (isCover !== trackIsCover) score -= 20;
+    if (specialVersion.isLive !== trackIsLive) score -= 40;
+    if (specialVersion.isRemix !== trackIsRemix) score -= 40;
+    if (specialVersion.isCover !== trackIsCover) score -= 40;
+    if (specialVersion.isAcoustic !== trackIsAcoustic) score -= 20;
     
-    return { track, score };
+    // Penalize if title lengths are very different
+    const titleLengthDiff = Math.abs(trackName.length - cleanTitle.length) / Math.max(trackName.length, cleanTitle.length);
+    if (titleLengthDiff > 0.5) { // If more than 50% difference in length
+      score -= 30;
+    }
+    
+    console.log(`${track.name} by ${track.artists[0].name} - Score: ${score} (Title:${titleSimilarity}, Artist:${artistScore}, Pop:${track.popularity})`);
+    
+    return { 
+      ...track, 
+      matchScore: score,
+      titleSimilarity: titleSimilarity,
+      artistSimilarity: artistScore 
+    };
   });
   
   // Sort by score
-  scoredTracks.sort((a, b) => b.score - a.score);
+  scoredTracks.sort((a, b) => b.matchScore - a.matchScore);
   
-  // Only return if the best match has a reasonable score
-  if (scoredTracks.length > 0 && scoredTracks[0].score >= 70) {
-    const bestMatch = scoredTracks[0].track;
-    return {
-      id: bestMatch.id,
-      uri: bestMatch.uri,
-      popularity: bestMatch.popularity
-    };
+  // Only return if the best match has a reasonable score and title similarity
+  if (scoredTracks.length > 0) {
+    const bestMatch = scoredTracks[0];
+    
+    // Require a minimum score threshold that's based on both 
+    // popularity and matching criteria
+    if (bestMatch.matchScore >= 150 && bestMatch.titleSimilarity >= 50) {
+      return bestMatch;
+    }
+    
+    // Special case for exact title match with good popularity
+    if (bestMatch.titleSimilarity >= 95 && bestMatch.popularity >= 40) {
+      return bestMatch;
+    }
   }
   
   return null;
