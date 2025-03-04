@@ -48,11 +48,23 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
     if (confidence === undefined) return null;
     
     if (confidence >= 80) {
-      return <CheckCircle2 className="h-4 w-4 text-green-500" title={`Match confidence: ${confidence}%`} />;
+      return (
+        <span title={`Match confidence: ${confidence}%`}>
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+        </span>
+      );
     } else if (confidence >= 60) {
-      return <CheckCircle2 className="h-4 w-4 text-yellow-500" title={`Match confidence: ${confidence}%`} />;
+      return (
+        <span title={`Match confidence: ${confidence}%`}>
+          <CheckCircle2 className="h-4 w-4 text-yellow-500" />
+        </span>
+      );
     } else {
-      return <AlertTriangle className="h-4 w-4 text-orange-500" title={`Match confidence: ${confidence}%`} />;
+      return (
+        <span title={`Match confidence: ${confidence}%`}>
+          <AlertTriangle className="h-4 w-4 text-orange-500" />
+        </span>
+      );
     }
   };
 
