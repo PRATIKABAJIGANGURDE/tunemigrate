@@ -1,4 +1,3 @@
-
 import { Song } from "@/types";
 
 const CLIENT_ID = "e4de652cc02f42d6b3bdfdc24e155fc6";
@@ -184,7 +183,7 @@ const detectSpecialVersion = (title: string): {
   const lowerTitle = title.toLowerCase();
   return {
     isLive: /\blive\b|\bconcert\b|\bperformance\b|\bunplugged\b|\bsession\b/i.test(lowerTitle),
-    isRemix: /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\bbootleg\b|\brework\b/i.test(lowerTitle),
+    isRemix: /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\brework\b/i.test(lowerTitle),
     isCover: /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(lowerTitle),
     isAcoustic: /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(lowerTitle)
   };
@@ -268,12 +267,85 @@ const calculateSimilarity = (str1: string, str2: string): number => {
 };
 
 /**
- * Advanced search for a track on Spotify with multiple fallbacks
- * Enhanced with structured queries and fuzzy matching
+ * Compare song durations to improve matching
+ * Returns a score from 0-100, with 100 being an exact match
  */
-export const searchTrack = async (query: string, accessToken: string): Promise<{ id: string; uri: string; popularity: number } | null> => {
+const compareDurations = (ytDuration?: string, spotifyDurationMs?: number): number => {
+  if (!ytDuration || !spotifyDurationMs) return 50; // Neutral score if we can't compare
+  
+  try {
+    // Convert YouTube duration (e.g., "3:42") to seconds
+    const ytParts = ytDuration.split(':').map(Number);
+    let ytSeconds = 0;
+    
+    if (ytParts.length === 3) { // H:MM:SS
+      ytSeconds = ytParts[0] * 3600 + ytParts[1] * 60 + ytParts[2];
+    } else if (ytParts.length === 2) { // M:SS
+      ytSeconds = ytParts[0] * 60 + ytParts[1];
+    } else {
+      return 50; // Can't parse
+    }
+    
+    // Convert Spotify duration from ms to seconds
+    const spotifySeconds = spotifyDurationMs / 1000;
+    
+    // Calculate difference as percentage
+    const diff = Math.abs(ytSeconds - spotifySeconds);
+    const percentage = diff / Math.max(ytSeconds, spotifySeconds);
+    
+    // Convert to a 0-100 score with some tolerance
+    // Allow 10% difference for a perfect score, scale linearly after that
+    if (percentage <= 0.1) {
+      return 100;
+    } else if (percentage <= 0.3) {
+      return 100 - ((percentage - 0.1) * 500); // Scale from 100 down to 0
+    } else {
+      return 0; // Too different
+    }
+  } catch (e) {
+    console.error("Error comparing durations:", e);
+    return 50; // Neutral score on error
+  }
+};
+
+/**
+ * Check if the upload date approximately matches release date
+ * Returns a bonus score (0-20) if dates are close
+ */
+const compareReleaseDates = (uploadDate?: string, releaseDate?: string): number => {
+  if (!uploadDate || !releaseDate) return 0;
+  
+  try {
+    const upload = new Date(uploadDate);
+    const release = new Date(releaseDate);
+    
+    // Calculate difference in months
+    const diffMonths = Math.abs(
+      (upload.getFullYear() - release.getFullYear()) * 12 + 
+      upload.getMonth() - release.getMonth()
+    );
+    
+    // Score based on proximity
+    if (diffMonths <= 3) {
+      return 20; // Full bonus if within 3 months
+    } else if (diffMonths <= 12) {
+      return 10; // Half bonus if within a year
+    } else {
+      return 0;
+    }
+  } catch (e) {
+    console.error("Error comparing dates:", e);
+    return 0;
+  }
+};
+
+/**
+ * Advanced search for a track on Spotify with multiple fallbacks
+ * Enhanced with structured queries, fuzzy matching, and additional metadata
+ */
+export const searchTrack = async (song: Song, accessToken: string): Promise<{ id: string; uri: string; popularity: number } | null> => {
   // Clean the title to remove YouTube-specific formatting
-  const cleanedQuery = cleanSongTitle(query);
+  const cleanedQuery = cleanSongTitle(song.title);
   const specialVersion = detectSpecialVersion(cleanedQuery);
   
   // Extract artist and song title components
@@ -284,6 +356,8 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
   console.log("Extracted artist:", artist);
   console.log("Extracted song title:", songTitle);
   console.log("Special version:", specialVersion);
+  console.log("Duration:", song.duration);
+  console.log("Upload date:", song.uploadDate);
   
   // Store all search results to analyze and select the best match
   let allResults: any[] = [];
@@ -363,7 +437,7 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
   
   // If we found results, score them and find the best match
   if (allResults.length > 0) {
-    const bestMatch = findBestMatch(allResults, songTitle, artist, specialVersion);
+    const bestMatch = findBestMatch(allResults, songTitle, artist, specialVersion, song.duration, song.uploadDate);
     
     if (bestMatch) {
       console.log("Best match found:", bestMatch.name, "by", bestMatch.artists[0].name, "with score:", bestMatch.matchScore);
@@ -375,19 +449,21 @@ export const searchTrack = async (query: string, accessToken: string): Promise<{
     }
   }
   
-  console.log("No good match found for:", query);
+  console.log("No good match found for:", song.title);
   return null;
 };
 
 /**
  * Enhanced algorithm to find the best matching track from search results
- * Uses a scoring system based on multiple criteria
+ * Uses a scoring system based on multiple criteria including duration and release date
  */
 const findBestMatch = (
   tracks: any[], 
   songTitle: string, 
   artist: string, 
-  specialVersion: { isLive: boolean; isRemix: boolean; isCover: boolean; isAcoustic: boolean }
+  specialVersion: { isLive: boolean; isRemix: boolean; isCover: boolean; isAcoustic: boolean },
+  duration?: string,
+  uploadDate?: string
 ): any | null => {
   // Clean strings for comparison
   const cleanTitle = songTitle.toLowerCase();
@@ -432,6 +508,20 @@ const findBestMatch = (
     if (specialVersion.isRemix !== trackIsRemix) score -= 40;
     if (specialVersion.isCover !== trackIsCover) score -= 40;
     if (specialVersion.isAcoustic !== trackIsAcoustic) score -= 20;
+    
+    // Duration comparison
+    if (duration) {
+      const durationScore = compareDurations(duration, track.duration_ms);
+      score += durationScore * 0.5; // Add up to 50 points for duration match
+      console.log(`Duration score for "${track.name}": ${durationScore}`);
+    }
+    
+    // Release date proximity to upload date
+    if (uploadDate && track.album?.release_date) {
+      const releaseScore = compareReleaseDates(uploadDate, track.album.release_date);
+      score += releaseScore; // Add up to 20 points for date proximity
+      console.log(`Release date score for "${track.name}": ${releaseScore}`);
+    }
     
     // Penalize if title lengths are very different
     const titleLengthDiff = Math.abs(trackName.length - cleanTitle.length) / Math.max(trackName.length, cleanTitle.length);
@@ -566,10 +656,8 @@ export const findSpotifyTracks = async (
   for (let i = 0; i < enhancedSongs.length; i++) {
     if (enhancedSongs[i].selected) {
       try {
-        const title = enhancedSongs[i].title;
-        
         // Search with the full song information
-        const result = await searchTrack(title, accessToken);
+        const result = await searchTrack(enhancedSongs[i], accessToken);
         
         if (result) {
           enhancedSongs[i].spotifyId = result.id;

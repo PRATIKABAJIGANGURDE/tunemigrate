@@ -27,7 +27,7 @@ const ExtractionStep = ({ playlistSize, currentProgress }: ExtractionStepProps) 
           {progressText}
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          Cleaning song titles for better Spotify matching
+          Fetching titles, durations, and upload dates for better Spotify matching
         </p>
       </AnimatedCard>
     </motion.div>

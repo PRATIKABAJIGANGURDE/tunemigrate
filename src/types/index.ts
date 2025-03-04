@@ -5,6 +5,7 @@ export interface Song {
   artist: string;
   thumbnail?: string;
   duration?: string;
+  uploadDate?: string;
   spotifyId?: string;
   spotifyUri?: string;
   selected: boolean;
