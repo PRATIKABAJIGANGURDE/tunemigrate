@@ -1,4 +1,3 @@
-
 export interface Song {
   id: string;
   title: string;
@@ -9,6 +8,7 @@ export interface Song {
   spotifyId?: string;
   spotifyUri?: string;
   selected: boolean;
+  matchConfidence?: number; // Added to store the confidence score
 }
 
 export interface PlaylistData {

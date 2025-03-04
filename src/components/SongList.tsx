@@ -5,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, X, Music } from "lucide-react";
+import { Search, X, Music, CheckCircle2, AlertTriangle } from "lucide-react";
 
 interface SongListProps {
   songs: Song[];
@@ -42,6 +42,19 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
   );
 
   const selectedCount = songs.filter(song => song.selected).length;
+
+  // Function to render match confidence indicator
+  const renderMatchConfidence = (confidence?: number) => {
+    if (confidence === undefined) return null;
+    
+    if (confidence >= 80) {
+      return <CheckCircle2 className="h-4 w-4 text-green-500" title={`Match confidence: ${confidence}%`} />;
+    } else if (confidence >= 60) {
+      return <CheckCircle2 className="h-4 w-4 text-yellow-500" title={`Match confidence: ${confidence}%`} />;
+    } else {
+      return <AlertTriangle className="h-4 w-4 text-orange-500" title={`Match confidence: ${confidence}%`} />;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -116,8 +129,14 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
                         onClick={() => setEditingSong(song.id)}
                         className="cursor-text"
                       >
-                        <p className="font-medium text-sm truncate">{song.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{song.artist}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium text-sm truncate">{song.title}</p>
+                          {renderMatchConfidence(song.matchConfidence)}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {song.artist}
+                          {song.duration && <span className="ml-1 text-xs opacity-70">• {song.duration}</span>}
+                        </p>
                       </div>
                     )}
                   </div>

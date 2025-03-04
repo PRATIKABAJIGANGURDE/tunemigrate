@@ -136,7 +136,7 @@ const cleanSongTitle = (title: string): string => {
     // Remove lyric markers
     .replace(/\(Lyrics\)/gi, '')
     .replace(/\(Lyric Video\)/gi, '')
-    .replace(/\(Lyrics\/Lyric Video\)/gi, '')
+    .replace(/\(Lyric\/Lyric Video\)/gi, '')
     .replace(/\(with Lyrics\)/gi, '')
     .replace(/\(ft\..*?\)/gi, '')
     .replace(/\(feat\..*?\)/gi, '')
@@ -340,10 +340,138 @@ const compareReleaseDates = (uploadDate?: string, releaseDate?: string): number 
 };
 
 /**
+ * Calculate string similarity using a combination of methods
+ * Returns a value between 0-1 where 1 is exact match
+ */
+const calculateStringSimilarity = (str1: string, str2: string): number => {
+  // Normalize strings - remove special characters, lowercase
+  const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  
+  const a = normalize(str1);
+  const b = normalize(str2);
+  
+  // Check for exact match after normalization
+  if (a === b) return 1.0;
+  
+  // Check if one is a substring of the other
+  if (a.includes(b) || b.includes(a)) {
+    const longerLength = Math.max(a.length, b.length);
+    const shorterLength = Math.min(a.length, b.length);
+    return shorterLength / longerLength;
+  }
+  
+  // Check individual word matches
+  const wordsA = a.split(/\s+/).filter(w => w.length > 2);
+  const wordsB = b.split(/\s+/).filter(w => w.length > 2);
+  
+  let matchCount = 0;
+  for (const wordA of wordsA) {
+    if (wordsB.some(wordB => wordB.includes(wordA) || wordA.includes(wordB))) {
+      matchCount++;
+    }
+  }
+  
+  const wordMatchRatio = wordsA.length > 0 ? matchCount / wordsA.length : 0;
+  
+  // Return weighted combination
+  return wordMatchRatio;
+};
+
+/**
+ * Convert duration string (like "3:45") to seconds
+ */
+const durationToSeconds = (duration?: string): number => {
+  if (!duration) return 0;
+  
+  const parts = duration.split(':').map(Number);
+  
+  if (parts.length === 3) { // H:MM:SS
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) { // M:SS
+    return parts[0] * 60 + parts[1];
+  }
+  
+  return 0;
+};
+
+/**
+ * Calculate a confidence score for how well a spotify track matches a youtube song
+ * Returns a value from 0-100
+ */
+const calculateMatchConfidence = (
+  song: Song,
+  spotifyTrack: any
+): number => {
+  let confidence = 0;
+  
+  // Extract relevant data
+  const youtubeTitle = cleanSongTitle(song.title);
+  const youtubeArtist = song.artist || extractArtistName(song.title);
+  const youtubeDuration = song.duration;
+  const youtubeUploadDate = song.uploadDate;
+  
+  const spotifyTitle = spotifyTrack.name;
+  const spotifyArtist = spotifyTrack.artists[0].name;
+  const spotifyDuration = spotifyTrack.duration_ms / 1000; // Convert ms to seconds
+  const spotifyReleaseDate = spotifyTrack.album?.release_date;
+  
+  console.log(`Calculating confidence for "${youtubeTitle}" by ${youtubeArtist} vs "${spotifyTitle}" by ${spotifyArtist}`);
+  
+  // Exact match (after cleaning) is a guaranteed high score
+  const normalizedYoutubeTitle = youtubeTitle.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const normalizedSpotifyTitle = spotifyTitle.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  
+  if (normalizedYoutubeTitle === normalizedSpotifyTitle && 
+      youtubeArtist.toLowerCase().includes(spotifyArtist.toLowerCase()) || 
+      spotifyArtist.toLowerCase().includes(youtubeArtist.toLowerCase())) {
+    return 90; // Very high confidence for exact title match with artist overlap
+  }
+  
+  // Title similarity (50% weight)
+  const titleSimilarity = calculateStringSimilarity(youtubeTitle, spotifyTitle);
+  confidence += titleSimilarity * 50;
+  
+  // Artist similarity (30% weight)
+  const artistSimilarity = calculateStringSimilarity(youtubeArtist, spotifyArtist);
+  confidence += artistSimilarity * 30;
+  
+  // Duration similarity (20% weight)
+  const youtubeDurationSec = durationToSeconds(youtubeDuration);
+  
+  // Calculate duration difference percentage (0-1)
+  const maxDuration = Math.max(youtubeDurationSec, spotifyDuration);
+  const durationDiff = Math.abs(youtubeDurationSec - spotifyDuration);
+  const durationSimilarity = maxDuration > 0 ? 1 - (durationDiff / maxDuration) : 0;
+  
+  confidence += durationSimilarity * 20;
+  
+  // Add bonus for temporal proximity between upload and release
+  if (youtubeUploadDate && spotifyReleaseDate) {
+    const uploadDate = new Date(youtubeUploadDate);
+    const releaseDate = new Date(spotifyReleaseDate);
+    
+    // If upload is within 3 months of release, add bonus
+    const diffMonths = Math.abs(
+      (uploadDate.getFullYear() - releaseDate.getFullYear()) * 12 + 
+      uploadDate.getMonth() - releaseDate.getMonth()
+    );
+    
+    if (diffMonths <= 3) {
+      confidence += 10; // Significant bonus for temporal proximity
+    }
+  }
+  
+  console.log(`Confidence breakdown - Title: ${titleSimilarity * 50}, Artist: ${artistSimilarity * 30}, Duration: ${durationSimilarity * 20}`);
+  console.log(`Final confidence: ${Math.min(100, Math.max(0, confidence))}`);
+  
+  return Math.min(100, Math.max(0, confidence));
+};
+
+/**
  * Advanced search for a track on Spotify with multiple fallbacks
  * Enhanced with structured queries, fuzzy matching, and additional metadata
  */
-export const searchTrack = async (song: Song, accessToken: string): Promise<{ id: string; uri: string; popularity: number } | null> => {
+export const searchTrack = async (song: Song, accessToken: string): Promise<{ id: string; uri: string; popularity: number; confidence: number } | null> => {
   // Clean the title to remove YouTube-specific formatting
   const cleanedQuery = cleanSongTitle(song.title);
   const specialVersion = detectSpecialVersion(cleanedQuery);
@@ -444,7 +572,8 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<{ id
       return {
         id: bestMatch.id,
         uri: bestMatch.uri,
-        popularity: bestMatch.popularity
+        popularity: bestMatch.popularity,
+        confidence: bestMatch.confidenceScore
       };
     }
   }
@@ -469,91 +598,58 @@ const findBestMatch = (
   const cleanTitle = songTitle.toLowerCase();
   const cleanArtist = artist ? artist.toLowerCase() : '';
   
-  // Filter out tracks with very low popularity as they are likely to be wrong matches
-  const viableTracks = tracks.filter(track => track.popularity >= 20);
-  
-  if (viableTracks.length === 0) {
+  if (tracks.length === 0) {
     return null;
   }
   
   // Score tracks by various criteria
-  const scoredTracks = viableTracks.map(track => {
-    const trackName = track.name.toLowerCase();
-    const trackArtists = track.artists.map((a: any) => a.name.toLowerCase());
+  const scoredTracks = tracks.map(track => {
+    // Calculate confidence score
+    const song: Song = {
+      id: 'temp',
+      title: songTitle,
+      artist: artist,
+      duration: duration,
+      uploadDate: uploadDate,
+      selected: true
+    };
     
-    // Start with the popularity as base score (0-100)
-    let score = track.popularity;
+    const confidenceScore = calculateMatchConfidence(song, track);
     
-    // Title similarity score (0-100)
-    const titleSimilarity = calculateSimilarity(trackName, cleanTitle);
-    score += titleSimilarity * 2; // Weight title similarity highly
-    
-    // Artist match score
-    let artistScore = 0;
-    if (cleanArtist) {
-      // Try to find best matching artist among track artists
-      const artistSimilarities = trackArtists.map(a => calculateSimilarity(a, cleanArtist));
-      artistScore = Math.max(...artistSimilarities);
-      score += artistScore * 2; // Weight artist match highly
-    }
-    
-    // Special version handling (live, remix, cover, acoustic)
-    const trackIsLive = /\blive\b|\bconcert\b|\bperformance\b|\bunplugged\b|\bsession\b/i.test(trackName);
-    const trackIsRemix = /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\brework\b/i.test(trackName);
-    const trackIsCover = /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(trackName);
-    const trackIsAcoustic = /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(trackName);
+    // Consider special version matching (live, remix, cover, acoustic)
+    const trackIsLive = /\blive\b|\bconcert\b|\bperformance\b|\bunplugged\b|\bsession\b/i.test(track.name);
+    const trackIsRemix = /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\brework\b/i.test(track.name);
+    const trackIsCover = /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(track.name);
+    const trackIsAcoustic = /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(track.name);
     
     // Penalize mismatches in special versions
-    if (specialVersion.isLive !== trackIsLive) score -= 40;
-    if (specialVersion.isRemix !== trackIsRemix) score -= 40;
-    if (specialVersion.isCover !== trackIsCover) score -= 40;
-    if (specialVersion.isAcoustic !== trackIsAcoustic) score -= 20;
-    
-    // Duration comparison
-    if (duration) {
-      const durationScore = compareDurations(duration, track.duration_ms);
-      score += durationScore * 0.5; // Add up to 50 points for duration match
-      console.log(`Duration score for "${track.name}": ${durationScore}`);
-    }
-    
-    // Release date proximity to upload date
-    if (uploadDate && track.album?.release_date) {
-      const releaseScore = compareReleaseDates(uploadDate, track.album.release_date);
-      score += releaseScore; // Add up to 20 points for date proximity
-      console.log(`Release date score for "${track.name}": ${releaseScore}`);
-    }
-    
-    // Penalize if title lengths are very different
-    const titleLengthDiff = Math.abs(trackName.length - cleanTitle.length) / Math.max(trackName.length, cleanTitle.length);
-    if (titleLengthDiff > 0.5) { // If more than 50% difference in length
-      score -= 30;
-    }
-    
-    console.log(`${track.name} by ${track.artists[0].name} - Score: ${score} (Title:${titleSimilarity}, Artist:${artistScore}, Pop:${track.popularity})`);
+    let adjustedScore = confidenceScore;
+    if (specialVersion.isLive !== trackIsLive) adjustedScore -= 20;
+    if (specialVersion.isRemix !== trackIsRemix) adjustedScore -= 20;
+    if (specialVersion.isCover !== trackIsCover) adjustedScore -= 20;
+    if (specialVersion.isAcoustic !== trackIsAcoustic) adjustedScore -= 10;
     
     return { 
       ...track, 
-      matchScore: score,
-      titleSimilarity: titleSimilarity,
-      artistSimilarity: artistScore 
+      matchScore: adjustedScore,
+      confidenceScore
     };
   });
   
   // Sort by score
   scoredTracks.sort((a, b) => b.matchScore - a.matchScore);
   
-  // Only return if the best match has a reasonable score and title similarity
+  // Only return if the best match has a reasonable score
   if (scoredTracks.length > 0) {
     const bestMatch = scoredTracks[0];
     
-    // Require a minimum score threshold that's based on both 
-    // popularity and matching criteria
-    if (bestMatch.matchScore >= 150 && bestMatch.titleSimilarity >= 50) {
+    // Threshold based on confidence score
+    if (bestMatch.confidenceScore >= 70) {
       return bestMatch;
     }
     
-    // Special case for exact title match with good popularity
-    if (bestMatch.titleSimilarity >= 95 && bestMatch.popularity >= 40) {
+    // Special case for tracks with very high popularity even if confidence is lower
+    if (bestMatch.confidenceScore >= 60 && bestMatch.popularity >= 70) {
       return bestMatch;
     }
   }
@@ -662,6 +758,7 @@ export const findSpotifyTracks = async (
         if (result) {
           enhancedSongs[i].spotifyId = result.id;
           enhancedSongs[i].spotifyUri = result.uri;
+          enhancedSongs[i].matchConfidence = result.confidence;
         }
         
         // Update progress
