@@ -81,18 +81,26 @@ export const compareDurations = (ytDuration?: string, spotifyDurationMs?: number
     // Convert Spotify duration from ms to seconds
     const spotifySeconds = spotifyDurationMs / 1000;
     
-    // Calculate difference as percentage
-    const diff = Math.abs(ytSeconds - spotifySeconds);
-    const percentage = diff / Math.max(ytSeconds, spotifySeconds);
+    // Calculate absolute difference in seconds
+    const diffSeconds = Math.abs(ytSeconds - spotifySeconds);
     
-    // Convert to a 0-100 score with some tolerance
-    // Allow 10% difference for a perfect score, scale linearly after that
-    if (percentage <= 0.1) {
+    // Updated scoring logic:
+    // - If difference is less than 10 seconds: 100 (perfect match)
+    // - If difference is between 10-30 seconds: linear scale from 100 to 50
+    // - If difference is between 30-60 seconds: linear scale from 50 to 20
+    // - If difference is greater than 60 seconds (1 minute): 0 (bad match)
+    // - If difference is greater than 120 seconds (2 minutes): -50 (strong penalty)
+    
+    if (diffSeconds <= 10) {
       return 100;
-    } else if (percentage <= 0.3) {
-      return 100 - ((percentage - 0.1) * 500); // Scale from 100 down to 0
+    } else if (diffSeconds <= 30) {
+      return 100 - ((diffSeconds - 10) * (50 / 20)); // Scale from 100 down to 50
+    } else if (diffSeconds <= 60) {
+      return 50 - ((diffSeconds - 30) * (30 / 30)); // Scale from 50 down to 20
+    } else if (diffSeconds <= 120) {
+      return 20; // Low score for differences between 1-2 minutes
     } else {
-      return 0; // Too different
+      return 0; // No points if difference is over 2 minutes
     }
   } catch (e) {
     console.error("Error comparing durations:", e);
