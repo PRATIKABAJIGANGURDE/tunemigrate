@@ -12,6 +12,7 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
     { id: ConversionStep.EXTRACTING, label: "Extract Songs" },
     { id: ConversionStep.EDIT_SONGS, label: "Edit Songs" },
     { id: ConversionStep.NAME_PLAYLIST, label: "Name Playlist" },
+    { id: ConversionStep.REVIEW_MATCHES, label: "Review Matches" },
     { id: ConversionStep.CREATE_PLAYLIST, label: "Create Playlist" },
   ];
 

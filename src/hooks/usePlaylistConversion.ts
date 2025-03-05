@@ -5,7 +5,8 @@ import { ConversionStep, Song, PlaylistData } from "@/types";
 import { extractSongsFromPlaylist } from "@/services/youtubeService";
 import { 
   createSpotifyPlaylistFromSongs,
-  getAccessToken
+  getAccessToken,
+  findSpotifyTracks
 } from "@/services/spotifyService";
 
 export const usePlaylistConversion = () => {
@@ -68,6 +69,52 @@ export const usePlaylistConversion = () => {
       return;
     }
     
+    // Move to Match Review step instead of immediately creating playlist
+    setCurrentStep(ConversionStep.REVIEW_MATCHES);
+    setLoading(true);
+    
+    try {
+      const accessToken = getAccessToken();
+      
+      if (!accessToken) {
+        throw new Error("Spotify access token not found");
+      }
+      
+      // First, find matching tracks to display in the review step
+      const selectedSongs = playlistData.songs.filter(song => song.selected);
+      
+      // Get matches but don't create the playlist yet
+      const songsWithMatches = await findSpotifyTracks(
+        selectedSongs, 
+        accessToken,
+        (progress) => {
+          setConversionProgress(progress);
+        }
+      );
+      
+      setPlaylistData({
+        ...playlistData,
+        songs: songsWithMatches
+      });
+      
+      setLoading(false);
+      
+      // Stats for the review screen
+      const matchedCount = songsWithMatches.filter(s => s.selected && s.spotifyUri).length;
+      setMatchingStats({
+        matched: matchedCount,
+        total: selectedSongs.length
+      });
+      
+    } catch (error) {
+      console.error("Error finding matches:", error);
+      setLoading(false);
+      setCurrentStep(ConversionStep.NAME_PLAYLIST);
+      toast.error("Failed to find matches for songs. Please try again.");
+    }
+  };
+  
+  const handleCreatePlaylist = async () => {
     setCurrentStep(ConversionStep.CREATE_PLAYLIST);
     setLoading(true);
     setConversionProgress(0);
@@ -79,11 +126,11 @@ export const usePlaylistConversion = () => {
         throw new Error("Spotify access token not found");
       }
       
-      // Create Spotify playlist with the selected songs
+      // Songs already have spotifyUri from the review step, just need to create the playlist
       const result = await createSpotifyPlaylistFromSongs(
         accessToken,
-        name,
-        description || `Converted from YouTube with TuneMigrate`,
+        playlistData.title,
+        playlistData.description || `Converted from YouTube with TuneMigrate`,
         playlistData.songs,
         (progress) => {
           setConversionProgress(progress);
@@ -105,9 +152,13 @@ export const usePlaylistConversion = () => {
     } catch (error) {
       console.error("Error creating playlist:", error);
       setLoading(false);
-      setCurrentStep(ConversionStep.NAME_PLAYLIST);
+      setCurrentStep(ConversionStep.REVIEW_MATCHES);
       toast.error("Failed to create playlist. Please try again.");
     }
+  };
+
+  const handleBackToNaming = () => {
+    setCurrentStep(ConversionStep.NAME_PLAYLIST);
   };
 
   const handleStartOver = () => {
@@ -138,6 +189,8 @@ export const usePlaylistConversion = () => {
     handleSongUpdate,
     handleContinueToNaming,
     handlePlaylistNameSubmit,
+    handleCreatePlaylist,
+    handleBackToNaming,
     handleStartOver,
     handleOpenSpotify
   };

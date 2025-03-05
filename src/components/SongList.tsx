@@ -1,12 +1,12 @@
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, X, Music, CheckCircle2, AlertTriangle, Clock, PercentIcon } from "lucide-react";
+import { Search, X, Music, Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import MatchQualityIndicator from "./MatchQualityIndicator";
 
 interface SongListProps {
   songs: Song[];
@@ -44,75 +44,6 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
 
   const selectedCount = songs.filter(song => song.selected).length;
 
-  // Function to render match confidence indicator
-  const renderMatchConfidence = (confidence?: number) => {
-    if (confidence === undefined) return null;
-    
-    if (confidence >= 80) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-green-500 font-medium">{confidence}%</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-xs space-y-1 max-w-xs">
-                <p className="font-bold">Excellent Match: {confidence}%</p>
-                <p>High confidence that this is the correct song on Spotify</p>
-                <p className="text-green-400">Duration, title, and artist all match well</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    } else if (confidence >= 60) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
-                <CheckCircle2 className="h-4 w-4 text-yellow-500" />
-                <span className="text-xs text-yellow-500 font-medium">{confidence}%</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-xs space-y-1 max-w-xs">
-                <p className="font-bold">Good Match: {confidence}%</p>
-                <p>Reasonably confident this is the correct song</p>
-                <p className="text-yellow-400">Minor differences in details, but generally a good match</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    } else {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
-                <AlertTriangle className="h-4 w-4 text-orange-500" />
-                <span className="text-xs text-orange-500 font-medium">{confidence}%</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-xs space-y-1 max-w-xs">
-                <p className="font-bold">Low Match: {confidence}%</p>
-                <p>This might not be the correct song on Spotify</p>
-                <p className="text-orange-400">Significant differences in duration or details</p>
-                <p>Consider verifying this match manually</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-  };
-
-  // Function to render duration with a tooltip explaining its importance
   const renderDuration = (duration?: string) => {
     if (!duration) return null;
     
@@ -217,7 +148,7 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
                       >
                         <div className="flex items-center gap-1">
                           <p className="font-medium text-sm truncate">{song.title}</p>
-                          {renderMatchConfidence(song.matchConfidence)}
+                          <MatchQualityIndicator confidence={song.matchConfidence} />
                         </div>
                         <p className="text-xs text-muted-foreground truncate flex items-center">
                           {song.artist}

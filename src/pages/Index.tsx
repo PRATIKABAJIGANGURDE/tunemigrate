@@ -9,6 +9,7 @@ import UrlInput from "@/components/UrlInput";
 import ExtractionStep from "@/components/ExtractionStep";
 import SongEditStep from "@/components/SongEditStep";
 import NamingStep from "@/components/NamingStep";
+import ReviewStep from "@/components/ReviewStep";
 import CreationStep from "@/components/CreationStep";
 import CompletedStep from "@/components/CompletedStep";
 
@@ -34,6 +35,8 @@ const Index = () => {
     handleSongUpdate,
     handleContinueToNaming,
     handlePlaylistNameSubmit,
+    handleCreatePlaylist,
+    handleBackToNaming,
     handleStartOver,
     handleOpenSpotify
   } = usePlaylistConversion();
@@ -79,6 +82,15 @@ const Index = () => {
               isSpotifyConnected={spotifyConnected}
               onSubmit={handlePlaylistNameSubmit}
               onLogin={handleSpotifyLogin}
+            />
+          )}
+          
+          {currentStep === ConversionStep.REVIEW_MATCHES && (
+            <ReviewStep 
+              playlistTitle={playlistData.title}
+              songs={playlistData.songs}
+              onContinue={handleCreatePlaylist}
+              onBack={handleBackToNaming}
             />
           )}
           

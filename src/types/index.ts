@@ -1,3 +1,4 @@
+
 export interface Song {
   id: string;
   title: string;
@@ -22,6 +23,7 @@ export enum ConversionStep {
   EXTRACTING = 1,
   EDIT_SONGS = 2,
   NAME_PLAYLIST = 3,
-  CREATE_PLAYLIST = 4,
-  COMPLETED = 5,
+  REVIEW_MATCHES = 4, // New step added here
+  CREATE_PLAYLIST = 5,
+  COMPLETED = 6,
 }
