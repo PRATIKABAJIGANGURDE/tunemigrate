@@ -86,17 +86,17 @@ export const compareDurations = (ytDuration?: string, spotifyDurationMs?: number
     
     // Updated scoring logic:
     // - If difference is less than 10 seconds: 100 (perfect match)
-    // - If difference is between 10-30 seconds: linear scale from 100 to 50
-    // - If difference is between 30-60 seconds: linear scale from 50 to 20
-    // - If difference is greater than 60 seconds (1 minute): 0 (bad match)
-    // - If difference is greater than 120 seconds (2 minutes): -50 (strong penalty)
+    // - If difference is between 10-20 seconds: linear scale from 100 to 80
+    // - If difference is between 20-60 seconds: linear scale from 80 to 40
+    // - If difference is between 60-120 seconds (1-2 min): low score of 20
+    // - If difference is greater than 120 seconds (2 min): 0 (completely different)
     
     if (diffSeconds <= 10) {
       return 100;
-    } else if (diffSeconds <= 30) {
-      return 100 - ((diffSeconds - 10) * (50 / 20)); // Scale from 100 down to 50
+    } else if (diffSeconds <= 20) {
+      return 100 - ((diffSeconds - 10) * 2); // Scale from 100 down to 80
     } else if (diffSeconds <= 60) {
-      return 50 - ((diffSeconds - 30) * (30 / 30)); // Scale from 50 down to 20
+      return 80 - ((diffSeconds - 20) * (40 / 40)); // Scale from 80 down to 40
     } else if (diffSeconds <= 120) {
       return 20; // Low score for differences between 1-2 minutes
     } else {

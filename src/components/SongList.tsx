@@ -5,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, X, Music, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Search, X, Music, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
 interface SongListProps {
   songs: Song[];
@@ -49,20 +49,23 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
     
     if (confidence >= 80) {
       return (
-        <span title={`Match confidence: ${confidence}%`}>
+        <span title={`Match confidence: ${confidence}%`} className="flex items-center gap-1">
           <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-xs text-green-500 font-medium">{confidence}%</span>
         </span>
       );
     } else if (confidence >= 60) {
       return (
-        <span title={`Match confidence: ${confidence}%`}>
+        <span title={`Match confidence: ${confidence}%`} className="flex items-center gap-1">
           <CheckCircle2 className="h-4 w-4 text-yellow-500" />
+          <span className="text-xs text-yellow-500 font-medium">{confidence}%</span>
         </span>
       );
     } else {
       return (
-        <span title={`Match confidence: ${confidence}%`}>
+        <span title={`Match confidence: ${confidence}%`} className="flex items-center gap-1">
           <AlertTriangle className="h-4 w-4 text-orange-500" />
+          <span className="text-xs text-orange-500 font-medium">{confidence}%</span>
         </span>
       );
     }
@@ -147,7 +150,12 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
                           {song.artist}
-                          {song.duration && <span className="ml-1 text-xs opacity-70">• {song.duration}</span>}
+                          {song.duration && (
+                            <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
+                              <Clock className="h-3 w-3" />
+                              {song.duration}
+                            </span>
+                          )}
                         </p>
                       </div>
                     )}

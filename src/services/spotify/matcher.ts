@@ -1,4 +1,3 @@
-
 /**
  * Advanced Spotify track matching functionality
  */
@@ -12,7 +11,9 @@ import {
 } from "./utils/songCleaner";
 import { 
   calculateStringSimilarity, 
-  durationToSeconds
+  durationToSeconds, 
+  compareDurations, 
+  compareReleaseDates
 } from "./utils/similarity";
 
 /**
@@ -33,7 +34,7 @@ export const calculateMatchConfidence = (
   
   const spotifyTitle = spotifyTrack.name;
   const spotifyArtist = spotifyTrack.artists[0].name;
-  const spotifyDuration = spotifyTrack.duration_ms / 1000; // Convert ms to seconds
+  const spotifyDuration = spotifyTrack.duration_ms;
   const spotifyReleaseDate = spotifyTrack.album?.release_date;
   
   console.log(`Calculating confidence for "${youtubeTitle}" by ${youtubeArtist} vs "${spotifyTitle}" by ${spotifyArtist}`);
@@ -48,44 +49,28 @@ export const calculateMatchConfidence = (
     return 90; // Very high confidence for exact title match with artist overlap
   }
   
-  // Title similarity (50% weight)
+  // Title similarity (40% weight)
   const titleSimilarity = calculateStringSimilarity(youtubeTitle, spotifyTitle);
-  confidence += titleSimilarity * 50;
+  confidence += titleSimilarity * 40;
   
   // Artist similarity (30% weight)
   const artistSimilarity = calculateStringSimilarity(youtubeArtist, spotifyArtist);
   confidence += artistSimilarity * 30;
   
-  // Duration similarity (20% weight)
-  const youtubeDurationSec = durationToSeconds(youtubeDuration);
+  // Duration similarity (30% weight) - this is now more important
+  const durationScore = compareDurations(youtubeDuration, spotifyDuration);
+  confidence += (durationScore / 100) * 30;
   
-  // Calculate duration difference percentage (0-1)
-  const maxDuration = Math.max(youtubeDurationSec, spotifyDuration);
-  const durationDiff = Math.abs(youtubeDurationSec - spotifyDuration);
-  const durationSimilarity = maxDuration > 0 ? 1 - (durationDiff / maxDuration) : 0;
-  
-  confidence += durationSimilarity * 20;
+  console.log(`Duration comparison: YouTube=${youtubeDuration}, Spotify=${spotifyDuration/1000}s, Score=${durationScore}`);
   
   // Add bonus for temporal proximity between upload and release
-  if (youtubeUploadDate && spotifyReleaseDate) {
-    const uploadDate = new Date(youtubeUploadDate);
-    const releaseDate = new Date(spotifyReleaseDate);
-    
-    // If upload is within 3 months of release, add bonus
-    const diffMonths = Math.abs(
-      (uploadDate.getFullYear() - releaseDate.getFullYear()) * 12 + 
-      uploadDate.getMonth() - releaseDate.getMonth()
-    );
-    
-    if (diffMonths <= 3) {
-      confidence += 10; // Significant bonus for temporal proximity
-    }
-  }
+  const dateScore = compareReleaseDates(youtubeUploadDate, spotifyReleaseDate);
+  confidence += dateScore;
   
-  console.log(`Confidence breakdown - Title: ${titleSimilarity * 50}, Artist: ${artistSimilarity * 30}, Duration: ${durationSimilarity * 20}`);
+  console.log(`Confidence breakdown - Title: ${titleSimilarity * 40}, Artist: ${artistSimilarity * 30}, Duration: ${(durationScore / 100) * 30}, Date: ${dateScore}`);
   console.log(`Final confidence: ${Math.min(100, Math.max(0, confidence))}`);
   
-  return Math.min(100, Math.max(0, confidence));
+  return Math.min(100, Math.max(0, Math.round(confidence)));
 };
 
 /**

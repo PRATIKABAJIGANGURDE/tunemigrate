@@ -42,9 +42,16 @@ const CreationStep = ({
         <p className="mt-2 text-muted-foreground text-sm">
           Finding and adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          Using duration, upload date, and advanced matching to find the most accurate songs
-        </p>
+        <div className="text-xs text-muted-foreground mt-4 max-w-xs space-y-1">
+          <p className="font-medium">Smart matching in progress:</p>
+          <ul className="list-disc list-inside">
+            <li>Comparing song titles and artists</li>
+            <li>Checking duration (within 10-20 seconds is ideal)</li>
+            <li>Analyzing release and upload dates</li>
+            <li>Detecting special versions (live, remix, acoustic)</li>
+          </ul>
+          <p className="mt-2">Songs with higher match percentage have better quality matches!</p>
+        </div>
       </AnimatedCard>
     </motion.div>
   );
