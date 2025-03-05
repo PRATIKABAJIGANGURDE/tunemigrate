@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 
@@ -95,6 +94,7 @@ const Index = () => {
               onBack={handleBackToNaming}
               onAddSpotifySong={handleAddSpotifySong}
               onAddSpotifyTrack={handleAddSpotifyTrack}
+              onUpdate={handleSongUpdate}
               loading={loading}
             />
           )}

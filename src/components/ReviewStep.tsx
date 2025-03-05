@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import AnimatedCard from "./AnimatedCard";
@@ -6,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, CheckCircle } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getAccessToken } from "@/services/spotifyService";
@@ -18,6 +17,7 @@ interface ReviewStepProps {
   onBack: () => void;
   onAddSpotifySong: (query: string) => Promise<any[] | null>;
   onAddSpotifyTrack: (track: any) => void;
+  onUpdate: (updatedSongs: Song[]) => void;
   loading: boolean;
 }
 
@@ -28,6 +28,7 @@ const ReviewStep = ({
   onBack,
   onAddSpotifySong,
   onAddSpotifyTrack,
+  onUpdate,
   loading
 }: ReviewStepProps) => {
   const [minConfidence, setMinConfidence] = useState(0); // Filter threshold
@@ -91,6 +92,15 @@ const ReviewStep = ({
       setSearchResults(results);
       setShowDialog(true);
     }
+  };
+
+  // Handle removing song from playlist
+  const handleRemoveSong = (songId: string) => {
+    const updatedSongs = songs.map(song => 
+      song.id === songId ? { ...song, selected: false } : song
+    );
+    onUpdate(updatedSongs);
+    toast.success("Song removed from playlist");
   };
   
   return (
@@ -214,15 +224,15 @@ const ReviewStep = ({
             </Button>
           </div>
 
-          {/* Song list */}
+          {/* Song list - UPDATED UI */}
           <div className="max-h-[300px] overflow-y-auto pr-2">
             {displayedSongs.length > 0 ? (
               <ul className="space-y-2">
                 {displayedSongs.map(song => (
                   <li key={song.id} className="glass-panel p-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       {/* YouTube song info */}
-                      <div className="flex items-center gap-3 flex-1">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
                         {song.thumbnail ? (
                           <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
                             <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
@@ -235,18 +245,24 @@ const ReviewStep = ({
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <p className="font-medium text-sm truncate">{song.title}</p>
-                            <MatchQualityIndicator confidence={song.matchConfidence} />
+                            <p className="font-medium text-sm leading-tight line-clamp-2 break-words">
+                              {song.title}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground truncate flex items-center">
-                            {song.artist}
+                          <div className="flex items-center">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {song.artist}
+                            </p>
                             {song.duration && (
-                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
+                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
                                 <Clock className="h-3 w-3" />
                                 {song.duration}
                               </span>
                             )}
-                          </p>
+                          </div>
+                          <div className="mt-1">
+                            <MatchQualityIndicator confidence={song.matchConfidence} />
+                          </div>
                         </div>
                       </div>
                       
@@ -258,7 +274,7 @@ const ReviewStep = ({
                       </div>
                       
                       {/* Spotify match info */}
-                      <div className="flex items-center gap-3 flex-1">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
                         {song.spotifyThumbnail ? (
                           <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
                             <img src={song.spotifyThumbnail} alt={song.spotifyTitle} className="w-full h-full object-cover" />
@@ -270,18 +286,32 @@ const ReviewStep = ({
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{song.spotifyTitle || song.title}</p>
-                          <p className="text-xs text-muted-foreground truncate flex items-center">
-                            {song.spotifyArtist || song.artist}
+                          <p className="font-medium text-sm leading-tight line-clamp-2 break-words">
+                            {song.spotifyTitle || song.title}
+                          </p>
+                          <div className="flex items-center">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {song.spotifyArtist || song.artist}
+                            </p>
                             {song.spotifyDuration && (
-                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
+                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
                                 <Clock className="h-3 w-3" />
                                 {song.spotifyDuration}
                               </span>
                             )}
-                          </p>
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Remove button */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleRemoveSong(song.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </li>
                 ))}

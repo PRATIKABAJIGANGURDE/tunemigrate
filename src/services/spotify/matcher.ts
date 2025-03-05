@@ -1,3 +1,4 @@
+
 /**
  * Spotify Matching Services - Search and Match Tracks
  */
@@ -67,7 +68,9 @@ export const calculateMatchConfidence = async (song: Song, track: any): Promise<
   // Artist Similarity (using AI)
   let artistSimilarity = 0;
   try {
-    artistSimilarity = await getMatchDetails(song.artist, track.artists[0].name);
+    // Fix: Ensure we're always working with Song objects
+    const artistName = typeof song === 'string' ? song : song.artist;
+    artistSimilarity = await getMatchDetails(artistName, track.artists[0].name);
   } catch (error) {
     console.error("Error getting AI match details:", error);
   }
