@@ -39,3 +39,11 @@ export {
   findSpotifyTracks,
   createSpotifyPlaylistFromSongs
 } from './spotify/playlist';
+
+// Export AI matching utilities
+export {
+  extractArtistWithAI,
+  setGeminiApiKey,
+  getGeminiApiKey,
+  getMatchDetails
+} from './spotify/utils/aiMatcher';

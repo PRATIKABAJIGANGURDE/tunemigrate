@@ -2,6 +2,9 @@
 import { motion } from "framer-motion";
 import AnimatedCard from "./AnimatedCard";
 import LoadingIndicator from "./LoadingIndicator";
+import { useState } from "react";
+import { Button } from "./ui/button";
+import { Clock, MusicIcon, Calendar, PercentIcon } from "lucide-react";
 
 interface CreationStepProps {
   playlistTitle: string;
@@ -15,6 +18,7 @@ const CreationStep = ({
   currentProgress = 0
 }: CreationStepProps) => {
   const progressPercent = Math.min(100, currentProgress);
+  const [showDetailedInfo, setShowDetailedInfo] = useState(false);
   
   return (
     <motion.div
@@ -42,14 +46,96 @@ const CreationStep = ({
         <p className="mt-2 text-muted-foreground text-sm">
           Finding and adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
+        
         <div className="text-xs text-muted-foreground mt-4 max-w-xs space-y-1">
-          <p className="font-medium">Smart matching in progress:</p>
-          <ul className="list-disc list-inside">
-            <li>Comparing song titles and artists</li>
-            <li>Checking duration (within 10-20 seconds is ideal)</li>
-            <li>Analyzing release and upload dates</li>
-            <li>Detecting special versions (live, remix, acoustic)</li>
+          <div className="flex items-center justify-between">
+            <p className="font-medium">Smart matching in progress:</p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs h-6 px-2"
+              onClick={() => setShowDetailedInfo(!showDetailedInfo)}
+            >
+              {showDetailedInfo ? 'Show less' : 'Show more'}
+            </Button>
+          </div>
+          
+          <ul className="list-disc list-inside space-y-2">
+            <li className="flex items-start">
+              <span className="inline-flex items-center">
+                <MusicIcon className="h-3 w-3 mr-1" />
+                AI-powered artist & title comparison
+              </span>
+            </li>
+            <li className="flex items-start">
+              <span className="inline-flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                Duration matching (10-20s ideal, 1-2min poor)
+              </span>
+            </li>
+            <li className="flex items-start">
+              <span className="inline-flex items-center">
+                <Calendar className="h-3 w-3 mr-1" />
+                Release & upload date analysis
+              </span>
+            </li>
+            <li className="flex items-start">
+              <span className="inline-flex items-center">
+                <PercentIcon className="h-3 w-3 mr-1" />
+                Match confidence calculation
+              </span>
+            </li>
           </ul>
+
+          {showDetailedInfo && (
+            <div className="mt-4 bg-muted p-3 rounded-md text-xs">
+              <p className="font-medium mb-2">AI-Powered Matching Algorithm:</p>
+              
+              <div className="space-y-2">
+                <div>
+                  <p className="font-medium">Artist matching (40% of score):</p>
+                  <ul className="list-disc list-inside pl-2">
+                    <li>Uses Google Gemini AI to extract artist name</li>
+                    <li>Applies fuzzy string matching algorithms</li>
+                    <li>Handles featuring artists and variations</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="font-medium">Title matching (30% of score):</p>
+                  <ul className="list-disc list-inside pl-2">
+                    <li>Removes YouTube-specific formatting</li>
+                    <li>Identifies special versions (live, remix, acoustic)</li>
+                    <li>Uses Levenshtein distance for similarity</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="font-medium">Duration matching (20% of score):</p>
+                  <ul className="list-disc list-inside pl-2">
+                    <li>100% if within 10 seconds</li>
+                    <li>90% if within 10-20 seconds</li>
+                    <li>70% if within 20-30 seconds</li>
+                    <li>50% if within 30-60 seconds</li>
+                    <li>20% if within 1-2 minutes</li>
+                    <li>0% if more than 2 minutes different</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="font-medium">Release date matching (10% of score):</p>
+                  <ul className="list-disc list-inside pl-2">
+                    <li>100% if within 6 days</li>
+                    <li>80% if within 1 month</li>
+                    <li>60% if within 3 months</li>
+                    <li>40% if within 1 year</li>
+                    <li>20% if more than 1 year</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <p className="mt-2">Songs with higher match percentage have better quality matches!</p>
         </div>
       </AnimatedCard>

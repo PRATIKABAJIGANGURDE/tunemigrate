@@ -61,22 +61,14 @@ export const durationToSeconds = (duration?: string): number => {
 /**
  * Compare song durations to improve matching
  * Returns a score from 0-100, with 100 being an exact match
+ * Updated to be more strict with duration differences
  */
 export const compareDurations = (ytDuration?: string, spotifyDurationMs?: number): number => {
   if (!ytDuration || !spotifyDurationMs) return 50; // Neutral score if we can't compare
   
   try {
     // Convert YouTube duration (e.g., "3:42") to seconds
-    const ytParts = ytDuration.split(':').map(Number);
-    let ytSeconds = 0;
-    
-    if (ytParts.length === 3) { // H:MM:SS
-      ytSeconds = ytParts[0] * 3600 + ytParts[1] * 60 + ytParts[2];
-    } else if (ytParts.length === 2) { // M:SS
-      ytSeconds = ytParts[0] * 60 + ytParts[1];
-    } else {
-      return 50; // Can't parse
-    }
+    const ytSeconds = durationToSeconds(ytDuration);
     
     // Convert Spotify duration from ms to seconds
     const spotifySeconds = spotifyDurationMs / 1000;
@@ -84,19 +76,22 @@ export const compareDurations = (ytDuration?: string, spotifyDurationMs?: number
     // Calculate absolute difference in seconds
     const diffSeconds = Math.abs(ytSeconds - spotifySeconds);
     
-    // Updated scoring logic:
+    // Updated scoring logic per requirement:
     // - If difference is less than 10 seconds: 100 (perfect match)
-    // - If difference is between 10-20 seconds: linear scale from 100 to 80
-    // - If difference is between 20-60 seconds: linear scale from 80 to 40
+    // - If difference is between 10-20 seconds: linear scale from 100 to 90
+    // - If difference is between 20-30 seconds: linear scale from 90 to 70
+    // - If difference is between 30-60 seconds: linear scale from 70 to 50
     // - If difference is between 60-120 seconds (1-2 min): low score of 20
     // - If difference is greater than 120 seconds (2 min): 0 (completely different)
     
     if (diffSeconds <= 10) {
       return 100;
     } else if (diffSeconds <= 20) {
-      return 100 - ((diffSeconds - 10) * 2); // Scale from 100 down to 80
+      return 100 - ((diffSeconds - 10) * 1); // 100 to 90
+    } else if (diffSeconds <= 30) {
+      return 90 - ((diffSeconds - 20) * 2); // 90 to 70
     } else if (diffSeconds <= 60) {
-      return 80 - ((diffSeconds - 20) * (40 / 40)); // Scale from 80 down to 40
+      return 70 - ((diffSeconds - 30) * (20 / 30)); // 70 to 50
     } else if (diffSeconds <= 120) {
       return 20; // Low score for differences between 1-2 minutes
     } else {
@@ -119,17 +114,20 @@ export const compareReleaseDates = (uploadDate?: string, releaseDate?: string): 
     const upload = new Date(uploadDate);
     const release = new Date(releaseDate);
     
-    // Calculate difference in months
-    const diffMonths = Math.abs(
-      (upload.getFullYear() - release.getFullYear()) * 12 + 
-      upload.getMonth() - release.getMonth()
+    // Calculate difference in days
+    const diffDays = Math.abs(
+      Math.round((upload.getTime() - release.getTime()) / (1000 * 60 * 60 * 24))
     );
     
     // Score based on proximity
-    if (diffMonths <= 3) {
-      return 20; // Full bonus if within 3 months
-    } else if (diffMonths <= 12) {
-      return 10; // Half bonus if within a year
+    if (diffDays <= 6) {
+      return 20; // Full bonus if within 6 days
+    } else if (diffDays <= 30) {
+      return 15; // High bonus if within a month
+    } else if (diffDays <= 90) {
+      return 10; // Medium bonus if within 3 months
+    } else if (diffDays <= 365) {
+      return 5; // Low bonus if within a year
     } else {
       return 0;
     }

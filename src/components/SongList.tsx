@@ -5,7 +5,8 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, X, Music, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { Search, X, Music, CheckCircle2, AlertTriangle, Clock, PercentIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SongListProps {
   songs: Song[];
@@ -49,26 +50,96 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
     
     if (confidence >= 80) {
       return (
-        <span title={`Match confidence: ${confidence}%`} className="flex items-center gap-1">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span className="text-xs text-green-500 font-medium">{confidence}%</span>
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-xs text-green-500 font-medium">{confidence}%</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs space-y-1 max-w-xs">
+                <p className="font-bold">Excellent Match: {confidence}%</p>
+                <p>High confidence that this is the correct song on Spotify</p>
+                <p className="text-green-400">Duration, title, and artist all match well</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     } else if (confidence >= 60) {
       return (
-        <span title={`Match confidence: ${confidence}%`} className="flex items-center gap-1">
-          <CheckCircle2 className="h-4 w-4 text-yellow-500" />
-          <span className="text-xs text-yellow-500 font-medium">{confidence}%</span>
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
+                <CheckCircle2 className="h-4 w-4 text-yellow-500" />
+                <span className="text-xs text-yellow-500 font-medium">{confidence}%</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs space-y-1 max-w-xs">
+                <p className="font-bold">Good Match: {confidence}%</p>
+                <p>Reasonably confident this is the correct song</p>
+                <p className="text-yellow-400">Minor differences in details, but generally a good match</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     } else {
       return (
-        <span title={`Match confidence: ${confidence}%`} className="flex items-center gap-1">
-          <AlertTriangle className="h-4 w-4 text-orange-500" />
-          <span className="text-xs text-orange-500 font-medium">{confidence}%</span>
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
+                <AlertTriangle className="h-4 w-4 text-orange-500" />
+                <span className="text-xs text-orange-500 font-medium">{confidence}%</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs space-y-1 max-w-xs">
+                <p className="font-bold">Low Match: {confidence}%</p>
+                <p>This might not be the correct song on Spotify</p>
+                <p className="text-orange-400">Significant differences in duration or details</p>
+                <p>Consider verifying this match manually</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
+  };
+
+  // Function to render duration with a tooltip explaining its importance
+  const renderDuration = (duration?: string) => {
+    if (!duration) return null;
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
+              <Clock className="h-3 w-3" />
+              {duration}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-xs space-y-1 max-w-xs">
+              <p className="font-bold">Song Duration: {duration}</p>
+              <p>Duration is critical for matching accuracy:</p>
+              <ul className="list-disc list-inside">
+                <li>10-20 seconds difference: Good match</li>
+                <li>30-60 seconds difference: Questionable match</li>
+                <li>1-2 minutes difference: Likely not the same version</li>
+                <li>Over 2 minutes: Completely different track</li>
+              </ul>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   return (
@@ -148,14 +219,9 @@ const SongList = ({ songs, onUpdate, onContinue }: SongListProps) => {
                           <p className="font-medium text-sm truncate">{song.title}</p>
                           {renderMatchConfidence(song.matchConfidence)}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate flex items-center">
                           {song.artist}
-                          {song.duration && (
-                            <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
-                              <Clock className="h-3 w-3" />
-                              {song.duration}
-                            </span>
-                          )}
+                          {renderDuration(song.duration)}
                         </p>
                       </div>
                     )}
