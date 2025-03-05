@@ -9,7 +9,12 @@ export interface Song {
   spotifyId?: string;
   spotifyUri?: string;
   selected: boolean;
-  matchConfidence?: number; // Added to store the confidence score
+  matchConfidence?: number;
+  // New fields for Spotify track details
+  spotifyTitle?: string;
+  spotifyArtist?: string;
+  spotifyThumbnail?: string;
+  spotifyDuration?: string;
 }
 
 export interface PlaylistData {
@@ -23,7 +28,7 @@ export enum ConversionStep {
   EXTRACTING = 1,
   EDIT_SONGS = 2,
   NAME_PLAYLIST = 3,
-  REVIEW_MATCHES = 4, // New step added here
+  REVIEW_MATCHES = 4,
   CREATE_PLAYLIST = 5,
   COMPLETED = 6,
 }

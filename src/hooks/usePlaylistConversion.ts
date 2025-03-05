@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConversionStep, Song, PlaylistData } from "@/types";
@@ -6,7 +5,8 @@ import { extractSongsFromPlaylist } from "@/services/youtubeService";
 import { 
   createSpotifyPlaylistFromSongs,
   getAccessToken,
-  findSpotifyTracks
+  findSpotifyTracks,
+  searchSpotifySongs
 } from "@/services/spotifyService";
 
 export const usePlaylistConversion = () => {
@@ -25,7 +25,6 @@ export const usePlaylistConversion = () => {
     setCurrentStep(ConversionStep.EXTRACTING);
     
     try {
-      // Extract songs from YouTube playlist
       const extractedData = await extractSongsFromPlaylist(url);
       
       setPlaylistData({
@@ -69,7 +68,6 @@ export const usePlaylistConversion = () => {
       return;
     }
     
-    // Move to Match Review step instead of immediately creating playlist
     setCurrentStep(ConversionStep.REVIEW_MATCHES);
     setLoading(true);
     
@@ -80,10 +78,8 @@ export const usePlaylistConversion = () => {
         throw new Error("Spotify access token not found");
       }
       
-      // First, find matching tracks to display in the review step
       const selectedSongs = playlistData.songs.filter(song => song.selected);
       
-      // Get matches but don't create the playlist yet
       const songsWithMatches = await findSpotifyTracks(
         selectedSongs, 
         accessToken,
@@ -99,7 +95,6 @@ export const usePlaylistConversion = () => {
       
       setLoading(false);
       
-      // Stats for the review screen
       const matchedCount = songsWithMatches.filter(s => s.selected && s.spotifyUri).length;
       setMatchingStats({
         matched: matchedCount,
@@ -113,7 +108,63 @@ export const usePlaylistConversion = () => {
       toast.error("Failed to find matches for songs. Please try again.");
     }
   };
-  
+
+  const handleAddSpotifySong = async (query: string) => {
+    if (!getAccessToken()) {
+      toast.error("You must be connected to Spotify to search songs");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const accessToken = getAccessToken();
+      
+      if (!accessToken) {
+        throw new Error("Not logged in to Spotify");
+      }
+      
+      const searchResults = await searchSpotifySongs(query, accessToken);
+      
+      if (searchResults.length === 0) {
+        toast.info("No matching songs found");
+        setLoading(false);
+        return null;
+      }
+      
+      return searchResults;
+    } catch (error) {
+      console.error("Error searching Spotify:", error);
+      toast.error("Failed to search Spotify");
+      setLoading(false);
+      return null;
+    }
+  };
+
+  const handleAddSpotifyTrack = (track: any) => {
+    const newSong: Song = {
+      id: `spotify-${track.id}`,
+      title: track.name,
+      artist: track.artists.map((a: any) => a.name).join(", "),
+      thumbnail: track.album.images[0]?.url,
+      spotifyId: track.id,
+      spotifyUri: track.uri,
+      selected: true,
+      matchConfidence: 100,
+      spotifyTitle: track.name,
+      spotifyArtist: track.artists.map((a: any) => a.name).join(", "),
+      spotifyThumbnail: track.album.images[0]?.url,
+      spotifyDuration: track.duration_ms ? `${Math.floor((track.duration_ms / 1000) / 60)}:${String(Math.floor((track.duration_ms / 1000) % 60)).padStart(2, '0')}` : undefined,
+    };
+    
+    setPlaylistData({
+      ...playlistData,
+      songs: [...playlistData.songs, newSong]
+    });
+    
+    toast.success(`Added "${track.name}" to playlist`);
+    setLoading(false);
+  };
+
   const handleCreatePlaylist = async () => {
     setCurrentStep(ConversionStep.CREATE_PLAYLIST);
     setLoading(true);
@@ -126,7 +177,6 @@ export const usePlaylistConversion = () => {
         throw new Error("Spotify access token not found");
       }
       
-      // Songs already have spotifyUri from the review step, just need to create the playlist
       const result = await createSpotifyPlaylistFromSongs(
         accessToken,
         playlistData.title,
@@ -192,6 +242,8 @@ export const usePlaylistConversion = () => {
     handleCreatePlaylist,
     handleBackToNaming,
     handleStartOver,
-    handleOpenSpotify
+    handleOpenSpotify,
+    handleAddSpotifySong,
+    handleAddSpotifyTrack
   };
 };

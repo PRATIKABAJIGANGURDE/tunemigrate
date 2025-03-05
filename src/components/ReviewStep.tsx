@@ -1,22 +1,40 @@
 
 import { motion } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import AnimatedCard from "./AnimatedCard";
 import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { getAccessToken } from "@/services/spotifyService";
 
 interface ReviewStepProps {
   playlistTitle: string;
   songs: Song[];
   onContinue: () => void;
   onBack: () => void;
+  onAddSpotifySong: (query: string) => Promise<any[] | null>;
+  onAddSpotifyTrack: (track: any) => void;
+  loading: boolean;
 }
 
-const ReviewStep = ({ playlistTitle, songs, onContinue, onBack }: ReviewStepProps) => {
+const ReviewStep = ({ 
+  playlistTitle, 
+  songs, 
+  onContinue, 
+  onBack,
+  onAddSpotifySong,
+  onAddSpotifyTrack,
+  loading
+}: ReviewStepProps) => {
   const [minConfidence, setMinConfidence] = useState(0); // Filter threshold
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showDialog, setShowDialog] = useState(false);
+  
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
 
   // Calculate match quality statistics
@@ -55,7 +73,26 @@ const ReviewStep = ({ playlistTitle, songs, onContinue, onBack }: ReviewStepProp
     const filteredCount = selectedSongs.filter(s => (s.matchConfidence || 0) >= level).length;
     toast.info(`Showing ${filteredCount} songs with match quality of ${level}% or higher`);
   };
-
+  
+  // Handle Spotify search
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast.info("Please enter a search query");
+      return;
+    }
+    
+    if (!getAccessToken()) {
+      toast.error("You need to connect to Spotify first");
+      return;
+    }
+    
+    const results = await onAddSpotifySong(searchQuery.trim());
+    if (results) {
+      setSearchResults(results);
+      setShowDialog(true);
+    }
+  };
+  
   return (
     <motion.div
       key="review-matches"
@@ -158,37 +195,93 @@ const ReviewStep = ({ playlistTitle, songs, onContinue, onBack }: ReviewStepProp
               </Button>
             </div>
           </div>
+          
+          {/* Add song from Spotify */}
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search Spotify for additional songs..."
+                className="pl-10"
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+            <Button onClick={handleSearch} disabled={loading}>
+              <Plus className="mr-1 h-4 w-4" />
+              Add Song
+            </Button>
+          </div>
 
           {/* Song list */}
           <div className="max-h-[300px] overflow-y-auto pr-2">
             {displayedSongs.length > 0 ? (
               <ul className="space-y-2">
                 {displayedSongs.map(song => (
-                  <li key={song.id} className="glass-panel p-3 flex items-center gap-3">
-                    {song.thumbnail ? (
-                      <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-                        <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-secondary flex items-center justify-center flex-shrink-0">
-                        <MusicIcon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <p className="font-medium text-sm truncate">{song.title}</p>
-                        <MatchQualityIndicator confidence={song.matchConfidence} />
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate flex items-center">
-                        {song.artist}
-                        {song.duration && (
-                          <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
-                            <Clock className="h-3 w-3" />
-                            {song.duration}
-                          </span>
+                  <li key={song.id} className="glass-panel p-3">
+                    <div className="flex items-center gap-3">
+                      {/* YouTube song info */}
+                      <div className="flex items-center gap-3 flex-1">
+                        {song.thumbnail ? (
+                          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                            <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-secondary flex items-center justify-center flex-shrink-0">
+                            <MusicIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
                         )}
-                      </p>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className="font-medium text-sm truncate">{song.title}</p>
+                            <MatchQualityIndicator confidence={song.matchConfidence} />
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate flex items-center">
+                            {song.artist}
+                            {song.duration && (
+                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
+                                <Clock className="h-3 w-3" />
+                                {song.duration}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Arrow pointing to Spotify match */}
+                      <div className="text-muted-foreground px-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      
+                      {/* Spotify match info */}
+                      <div className="flex items-center gap-3 flex-1">
+                        {song.spotifyThumbnail ? (
+                          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                            <img src={song.spotifyThumbnail} alt={song.spotifyTitle} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                            <MusicIcon className="h-5 w-5 text-green-500" />
+                          </div>
+                        )}
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{song.spotifyTitle || song.title}</p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center">
+                            {song.spotifyArtist || song.artist}
+                            {song.spotifyDuration && (
+                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1">
+                                <Clock className="h-3 w-3" />
+                                {song.spotifyDuration}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -202,6 +295,64 @@ const ReviewStep = ({ playlistTitle, songs, onContinue, onBack }: ReviewStepProp
           </div>
         </div>
       </AnimatedCard>
+      
+      {/* Spotify search results dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Spotify Search Results</DialogTitle>
+            <DialogDescription>
+              Choose a song to add to your playlist
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="max-h-[300px] overflow-y-auto">
+            {searchResults.length > 0 ? (
+              <ul className="space-y-2">
+                {searchResults.map(track => (
+                  <li 
+                    key={track.id} 
+                    className="flex items-center gap-3 p-2 hover:bg-secondary/50 cursor-pointer rounded-md"
+                    onClick={() => {
+                      onAddSpotifyTrack(track);
+                      setShowDialog(false);
+                    }}
+                  >
+                    {track.album?.images?.[0]?.url ? (
+                      <img 
+                        src={track.album.images[0].url} 
+                        alt={track.name} 
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-muted flex items-center justify-center rounded">
+                        <MusicIcon className="h-4 w-4" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{track.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {track.artists.map((a: any) => a.name).join(", ")}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-center py-4 text-muted-foreground">No results found</p>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };

@@ -30,7 +30,8 @@ export {
 export {
   searchTrack,
   calculateMatchConfidence,
-  findBestMatch
+  findBestMatch,
+  searchSpotifySongs  // New export for searching songs
 } from './spotify/matcher';
 
 export {

@@ -38,7 +38,9 @@ const Index = () => {
     handleCreatePlaylist,
     handleBackToNaming,
     handleStartOver,
-    handleOpenSpotify
+    handleOpenSpotify,
+    handleAddSpotifySong,
+    handleAddSpotifyTrack
   } = usePlaylistConversion();
 
   // Check if user is logged in with Spotify
@@ -91,6 +93,9 @@ const Index = () => {
               songs={playlistData.songs}
               onContinue={handleCreatePlaylist}
               onBack={handleBackToNaming}
+              onAddSpotifySong={handleAddSpotifySong}
+              onAddSpotifyTrack={handleAddSpotifyTrack}
+              loading={loading}
             />
           )}
           

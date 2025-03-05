@@ -108,6 +108,14 @@ export const findSpotifyTracks = async (
           enhancedSongs[i].spotifyId = result.id;
           enhancedSongs[i].spotifyUri = result.uri;
           enhancedSongs[i].matchConfidence = result.confidence;
+          
+          // Add Spotify-specific details for display in the review step
+          enhancedSongs[i].spotifyTitle = result.name;
+          enhancedSongs[i].spotifyArtist = result.artists.map((a: any) => a.name).join(", ");
+          enhancedSongs[i].spotifyThumbnail = result.album?.images?.[0]?.url;
+          enhancedSongs[i].spotifyDuration = result.duration_ms ? 
+            `${Math.floor((result.duration_ms / 1000) / 60)}:${String(Math.floor((result.duration_ms / 1000) % 60)).padStart(2, '0')}` : 
+            undefined;
         }
         
         // Update progress
