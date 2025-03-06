@@ -68,9 +68,9 @@ export const calculateMatchConfidence = async (song: Song, track: any): Promise<
   // Artist Similarity (using AI)
   let artistSimilarity = 0;
   try {
-    // Fix: Ensure we're always working with Song objects
-    const artistName = typeof song === 'string' ? song : song.artist;
-    artistSimilarity = await getMatchDetails(artistName, track.artists[0].name);
+    // Use getMatchDetails to get detailed match info and extract only the artist match value
+    const matchDetails = getMatchDetails(song, track);
+    artistSimilarity = matchDetails.artistMatch / 100; // Convert to 0-1 scale
   } catch (error) {
     console.error("Error getting AI match details:", error);
   }
