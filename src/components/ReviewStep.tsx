@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import AnimatedCard from "./AnimatedCard";
@@ -5,10 +6,12 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2 } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, SpotifyIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getAccessToken } from "@/services/spotifyService";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ReviewStepProps {
   playlistTitle: string;
@@ -124,7 +127,7 @@ const ReviewStep = ({
               <Button variant="outline" onClick={onBack}>
                 Back
               </Button>
-              <Button onClick={handleContinue}>
+              <Button onClick={handleContinue} className="bg-green-600 hover:bg-green-700">
                 Create Playlist
               </Button>
             </div>
@@ -132,45 +135,101 @@ const ReviewStep = ({
 
           {/* Match quality summary */}
           <div className="bg-muted/40 rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-3">Playlist Match Quality</h3>
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-1">
+              <SpotifyIcon className="h-4 w-4 text-green-500" />
+              Playlist Match Quality
+            </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white/20 p-3 rounded-md">
+              <div className="bg-white/10 p-3 rounded-md">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Average Match</span>
                   <span className="text-lg font-bold">{stats.avgConfidence}%</span>
                 </div>
+                <div className="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${
+                      stats.avgConfidence >= 80 ? 'bg-green-500' : 
+                      stats.avgConfidence >= 60 ? 'bg-yellow-500' : 
+                      'bg-orange-500'
+                    }`}
+                    style={{ width: `${stats.avgConfidence}%` }}
+                  ></div>
+                </div>
               </div>
               
-              <div className="bg-white/20 p-3 rounded-md">
+              <div className="bg-white/10 p-3 rounded-md">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Songs Selected</span>
                   <span className="text-lg font-bold">{selectedSongs.length}</span>
                 </div>
+                <div className="text-xs mt-2 flex gap-1">
+                  {selectedSongs.length > 0 && (
+                    <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-500">
+                      {Math.round((selectedSongs.length / songs.length) * 100)}% of library
+                    </Badge>
+                  )}
+                </div>
               </div>
               
-              <div className="bg-white/20 p-3 rounded-md">
+              <div className="bg-white/10 p-3 rounded-md">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Will Be Added</span>
                   <span className="text-lg font-bold">{displayedSongs.length}</span>
+                </div>
+                <div className="text-xs mt-2 flex gap-1">
+                  {minConfidence > 0 && (
+                    <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-500">
+                      {minConfidence}%+ match quality
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
             
             {/* Quality breakdown */}
-            <div className="flex gap-4 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span>Excellent: {stats.songsByQuality.excellent}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <span>Good: {stats.songsByQuality.good}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                <span>Poor: {stats.songsByQuality.poor}</span>
-              </div>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 cursor-help">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span>Excellent: {stats.songsByQuality.excellent}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">80%+ match confidence</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 cursor-help">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span>Good: {stats.songsByQuality.good}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">60-79% match confidence</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 cursor-help">
+                      <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                      <span>Poor: {stats.songsByQuality.poor}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Below 60% match confidence</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           
@@ -218,21 +277,25 @@ const ReviewStep = ({
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={handleSearch} disabled={loading}>
+            <Button onClick={handleSearch} disabled={loading} className="bg-green-600 hover:bg-green-700">
               <Plus className="mr-1 h-4 w-4" />
               Add Song
             </Button>
           </div>
 
           {/* Song list - UPDATED UI */}
-          <div className="max-h-[300px] overflow-y-auto pr-2">
+          <div className="max-h-[400px] overflow-y-auto pr-2 rounded-md">
             {displayedSongs.length > 0 ? (
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {displayedSongs.map(song => (
-                  <li key={song.id} className="glass-panel p-3">
+                  <li key={song.id} className="glass-panel p-3 border border-gray-100/10 rounded-md bg-white/5 hover:bg-white/10 transition-colors">
                     <div className="flex items-start gap-3">
-                      {/* YouTube song info */}
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                      {/* Left side - YouTube info */}
+                      <div className="w-6 h-auto flex items-start mt-2">
+                        <YoutubeIcon className="text-red-500 h-5 w-5" />
+                      </div>
+                      
+                      <div className="flex items-start gap-3 flex-1 min-w-0 pr-2 border-r border-gray-200/20">
                         {song.thumbnail ? (
                           <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
                             <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
@@ -244,15 +307,29 @@ const ReviewStep = ({
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1">
-                            <p className="font-medium text-sm leading-tight line-clamp-2 break-words">
-                              {song.title}
-                            </p>
-                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="font-medium text-sm leading-tight line-clamp-1 break-words hover:text-blue-400 cursor-help">
+                                {song.title}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-sm">
+                              <p className="text-sm">{song.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
                           <div className="flex items-center">
-                            <p className="text-xs text-muted-foreground truncate">
-                              {song.artist}
-                            </p>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-xs text-muted-foreground truncate hover:text-blue-400 cursor-help">
+                                  {song.artist}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">{song.artist}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            
                             {song.duration && (
                               <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
                                 <Clock className="h-3 w-3" />
@@ -260,20 +337,20 @@ const ReviewStep = ({
                               </span>
                             )}
                           </div>
-                          <div className="mt-1">
-                            <MatchQualityIndicator confidence={song.matchConfidence} />
-                          </div>
                         </div>
                       </div>
                       
-                      {/* Arrow pointing to Spotify match */}
-                      <div className="text-muted-foreground px-2">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                      {/* Match quality indicator in center */}
+                      <div className="flex flex-col items-center justify-center px-1">
+                        <div className="text-sm font-medium">{song.matchConfidence || 0}%</div>
+                        <MatchQualityIndicator confidence={song.matchConfidence} showPercentage={false} />
                       </div>
                       
-                      {/* Spotify match info */}
+                      {/* Right side - Spotify info */}
+                      <div className="w-6 h-auto flex items-start mt-2">
+                        <SpotifyIcon className="text-green-500 h-5 w-5" />
+                      </div>
+                      
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         {song.spotifyThumbnail ? (
                           <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
@@ -286,13 +363,29 @@ const ReviewStep = ({
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm leading-tight line-clamp-2 break-words">
-                            {song.spotifyTitle || song.title}
-                          </p>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="font-medium text-sm leading-tight line-clamp-1 break-words hover:text-green-400 cursor-help">
+                                {song.spotifyTitle || song.title}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-sm">
+                              <p className="text-sm">{song.spotifyTitle || song.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          
                           <div className="flex items-center">
-                            <p className="text-xs text-muted-foreground truncate">
-                              {song.spotifyArtist || song.artist}
-                            </p>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-xs text-muted-foreground truncate hover:text-green-400 cursor-help">
+                                  {song.spotifyArtist || song.artist}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">{song.spotifyArtist || song.artist}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            
                             {song.spotifyDuration && (
                               <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
                                 <Clock className="h-3 w-3" />
@@ -317,7 +410,7 @@ const ReviewStep = ({
                 ))}
               </ul>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-8 bg-muted/20 rounded-md">
                 <p className="text-muted-foreground">No songs match the selected quality filter</p>
                 <p className="text-xs mt-2">Try lowering the quality threshold</p>
               </div>

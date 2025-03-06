@@ -22,31 +22,21 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<any 
   try {
     const cleanedTitle = cleanSongTitle(song.title);
     const artist = extractArtistName(song.artist);
-    const query = `track:${cleanedTitle} artist:${artist}`;
-    const encodedQuery = encodeURIComponent(query);
     
-    const response = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=5`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      }
-    );
+    // First try: search with both title and artist
+    let tracks = await searchWithTitleAndArtist(cleanedTitle, artist, accessToken);
     
-    if (!response.ok) {
-      throw new Error(`Spotify search failed: ${response.statusText}`);
+    // If no results, try searching with just the title
+    if (!tracks || tracks.length === 0) {
+      tracks = await searchWithTitleOnly(cleanedTitle, accessToken);
     }
-    
-    const data = await response.json();
-    const tracks = data.tracks.items;
     
     if (!tracks || tracks.length === 0) {
       return null;
     }
     
     // Find the best match
-    const bestMatch = findBestMatch(song, tracks);
+    const bestMatch = await findBestMatch(song, tracks);
     
     return bestMatch;
   } catch (error: any) {
@@ -56,33 +46,84 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<any 
 };
 
 /**
+ * Search with both title and artist
+ */
+const searchWithTitleAndArtist = async (title: string, artist: string, accessToken: string): Promise<any[]> => {
+  const query = `track:${title} artist:${artist}`;
+  const encodedQuery = encodeURIComponent(query);
+  
+  const response = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=5`,
+    {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    }
+  );
+  
+  if (!response.ok) {
+    throw new Error(`Spotify search failed: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  return data.tracks.items || [];
+};
+
+/**
+ * Search with title only (more flexible)
+ */
+const searchWithTitleOnly = async (title: string, accessToken: string): Promise<any[]> => {
+  const query = `track:${title}`;
+  const encodedQuery = encodeURIComponent(query);
+  
+  const response = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodedQuery}&type=track&limit=8`,
+    {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    }
+  );
+  
+  if (!response.ok) {
+    throw new Error(`Spotify search failed: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  return data.tracks.items || [];
+};
+
+/**
  * Calculate match confidence score
  */
 export const calculateMatchConfidence = async (song: Song, track: any): Promise<number> => {
   let confidence = 0;
   
-  // Title Similarity
+  // Title Similarity (25% weight)
   const titleSimilarity = calculateStringSimilarity(song.title, track.name);
-  confidence += titleSimilarity * 0.30; // 30% weight
+  confidence += titleSimilarity * 0.25;
   
-  // Artist Similarity (using AI)
+  // Artist Similarity (25% weight)
   let artistSimilarity = 0;
   try {
-    // Use getMatchDetails to get detailed match info and extract only the artist match value
+    // Get detailed match info from AI matcher and extract artist match value
     const matchDetails = getMatchDetails(song, track);
     artistSimilarity = matchDetails.artistMatch / 100; // Convert to 0-1 scale
   } catch (error) {
     console.error("Error getting AI match details:", error);
+    // Fallback: basic string similarity if AI fails
+    const artistString = track.artists.map((a: any) => a.name).join(" ");
+    artistSimilarity = calculateStringSimilarity(song.artist, artistString);
   }
-  confidence += artistSimilarity * 0.40; // 40% weight
+  confidence += artistSimilarity * 0.25;
   
-  // Duration Comparison
+  // Duration Comparison (40% weight - increased importance)
   const durationScore = compareDurations(song.duration, track.duration_ms);
-  confidence += durationScore / 100 * 0.20; // 20% weight
+  confidence += durationScore / 100 * 0.40;
   
-  // Release Date Comparison
+  // Release Date Comparison (10% weight)
   const releaseDateScore = compareReleaseDates(song.uploadDate, track.album.release_date);
-  confidence += releaseDateScore / 100 * 0.10; // 10% weight
+  confidence += releaseDateScore / 100 * 0.10;
   
   return Math.min(100, Math.round(confidence * 100));
 };

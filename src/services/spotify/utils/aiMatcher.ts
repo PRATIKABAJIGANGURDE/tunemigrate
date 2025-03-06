@@ -52,6 +52,8 @@ export const fallbackArtistExtraction = (title: string): string => {
   const patterns = [
     /^(.*?)\s*[-–:]\s*/,  // Matches "Artist - Title" format
     /^(.*?)\s*\(/,        // Matches "Artist (Title)" format
+    /^(.*?)\s*ft\./i,     // Matches "Artist ft." format
+    /^(.*?)\s*feat\./i,   // Matches "Artist feat." format
   ];
 
   for (const pattern of patterns) {
@@ -107,6 +109,48 @@ export const calculateLevenshteinSimilarity = (str1: string, str2: string): numb
 };
 
 /**
+ * Compare artists with more flexibility
+ * This handles cases where the uploader isn't the artist
+ */
+export const compareArtistsFlexibly = (youtubeName: string, spotifyName: string): number => {
+  // Normalize names
+  const normalizeArtist = (name: string): string => {
+    return name.toLowerCase()
+      .replace(/official|music|vevo|channel|records|recordings/gi, '')
+      .replace(/\(.*?\)|\[.*?\]/g, '')
+      .trim();
+  };
+  
+  const normalizedYoutube = normalizeArtist(youtubeName);
+  const normalizedSpotify = normalizeArtist(spotifyName);
+  
+  // Check for exact match after normalization
+  if (normalizedYoutube === normalizedSpotify) {
+    return 100;
+  }
+  
+  // Check if one contains the other
+  if (normalizedYoutube.includes(normalizedSpotify) || normalizedSpotify.includes(normalizedYoutube)) {
+    return 80;
+  }
+  
+  // Split names into parts and check for partial matches
+  const youtubeWords = normalizedYoutube.split(/\s+/).filter(w => w.length > 2);
+  const spotifyWords = normalizedSpotify.split(/\s+/).filter(w => w.length > 2);
+  
+  let matchCount = 0;
+  for (const word of youtubeWords) {
+    if (spotifyWords.some(w => w.includes(word) || word.includes(w))) {
+      matchCount++;
+    }
+  }
+  
+  if (youtubeWords.length === 0) return 30; // No meaningful words to compare
+  
+  return Math.min(100, Math.round((matchCount / youtubeWords.length) * 100));
+};
+
+/**
  * Gets detailed song match information 
  */
 export const getMatchDetails = (song: Song, spotifyTrack: any): {
@@ -131,27 +175,31 @@ export const getMatchDetails = (song: Song, spotifyTrack: any): {
     return 0;
   };
 
-  // Artist matching (40% weight)
+  // Artist matching with flexible comparison (40% weight)
   const songArtist = song.artist.toLowerCase();
   const spotifyArtist = spotifyTrack.artists[0].name.toLowerCase();
-  const artistMatch = calculateLevenshteinSimilarity(songArtist, spotifyArtist);
+  
+  // Use flexible artist comparison to better handle YouTube channel vs actual artist names
+  const artistMatch = compareArtistsFlexibly(songArtist, spotifyArtist);
   
   // Title matching (30% weight)
   const songTitle = song.title.toLowerCase();
   const spotifyTitle = spotifyTrack.name.toLowerCase();
   const titleMatch = calculateLevenshteinSimilarity(songTitle, spotifyTitle);
 
-  // Duration matching (20% weight)
+  // Duration matching (20% weight) - more heavily weighted in our algorithm now
   const songDuration = durationToSeconds(song.duration);
   const spotifyDuration = spotifyTrack.duration_ms / 1000; // convert ms to seconds
   
   let durationMatch = 100;
   const durationDiff = Math.abs(songDuration - spotifyDuration);
   
-  if (durationDiff <= 10) {
+  if (durationDiff <= 3) {
     durationMatch = 100; // Perfect match
+  } else if (durationDiff <= 10) {
+    durationMatch = 95; // Very close match
   } else if (durationDiff <= 20) {
-    durationMatch = 90; // Very close
+    durationMatch = 85; // Close match
   } else if (durationDiff <= 30) {
     durationMatch = 70; // Acceptable
   } else if (durationDiff <= 60) {
@@ -173,12 +221,12 @@ export const getMatchDetails = (song: Song, spotifyTrack: any): {
     const timeDiff = Math.abs(uploadDate.getTime() - releaseDate.getTime());
     const daysDiff = timeDiff / (1000 * 3600 * 24);
     
-    if (daysDiff <= 6) {
-      dateMatch = 100; // Close dates
+    if (daysDiff <= 7) {
+      dateMatch = 100; // Very close dates
     } else if (daysDiff <= 30) {
       dateMatch = 80; // Within a month
-    } else if (daysDiff <= 90) {
-      dateMatch = 60; // Within 3 months
+    } else if (daysDiff <= 180) {
+      dateMatch = 60; // Within 6 months
     } else if (daysDiff <= 365) {
       dateMatch = 40; // Within a year
     } else {
@@ -188,10 +236,10 @@ export const getMatchDetails = (song: Song, spotifyTrack: any): {
   
   // Calculate weighted total score
   const totalScore = Math.round(
-    (artistMatch * 0.4) +
+    (artistMatch * 0.3) +
     (titleMatch * 0.3) +
-    (durationMatch * 0.2) +
-    (dateMatch * 0.1)
+    (durationMatch * 0.35) +  // Increased weight for duration
+    (dateMatch * 0.05)
   );
   
   return {
