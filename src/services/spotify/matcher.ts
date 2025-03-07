@@ -14,6 +14,7 @@ import {
   extractArtistName
 } from "./utils/songCleaner";
 import { getMatchDetails } from "./utils/aiMatcher";
+import { refreshAccessToken } from "./utils/auth";
 
 /**
  * Search for a track on Spotify
@@ -41,6 +42,19 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<any 
     return bestMatch;
   } catch (error: any) {
     console.error("Error searching track:", error.message);
+    
+    // Handle token expiration
+    if (error.message?.includes("401") || error.message?.includes("expired")) {
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          return searchTrack(song, newToken);
+        }
+      } catch (refreshError) {
+        console.error("Failed to refresh token:", refreshError);
+      }
+    }
+    
     return null;
   }
 };
@@ -60,6 +74,14 @@ const searchWithTitleAndArtist = async (title: string, artist: string, accessTok
       }
     }
   );
+  
+  if (response.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return searchWithTitleAndArtist(title, artist, newToken);
+    }
+    throw new Error("Spotify session expired");
+  }
   
   if (!response.ok) {
     throw new Error(`Spotify search failed: ${response.statusText}`);
@@ -84,6 +106,14 @@ const searchWithTitleOnly = async (title: string, accessToken: string): Promise<
       }
     }
   );
+  
+  if (response.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return searchWithTitleOnly(title, newToken);
+    }
+    throw new Error("Spotify session expired");
+  }
   
   if (!response.ok) {
     throw new Error(`Spotify search failed: ${response.statusText}`);
@@ -154,7 +184,9 @@ export const findBestMatch = async (song: Song, tracks: any[]): Promise<any | nu
   return null;
 };
 
-// Add this function to the file
+/**
+ * Search for songs on Spotify by query
+ */
 export const searchSpotifySongs = async (query: string, accessToken: string): Promise<any[]> => {
   try {
     const encodedQuery = encodeURIComponent(query);
@@ -167,14 +199,31 @@ export const searchSpotifySongs = async (query: string, accessToken: string): Pr
       }
     );
     
+    if (response.status === 401) {
+      // Token expired, attempt to refresh
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        return searchSpotifySongs(query, newToken);
+      } else {
+        throw new Error("Spotify session expired. Please log in again.");
+      }
+    }
+    
     if (!response.ok) {
-      throw new Error(`Spotify search failed: ${response.statusText}`);
+      throw new Error(`Spotify search failed: ${response.statusText} (${response.status})`);
     }
     
     const data = await response.json();
+    
+    // Check if we have valid data structure
+    if (!data || !data.tracks || !Array.isArray(data.tracks.items)) {
+      console.error("Unexpected Spotify API response:", data);
+      throw new Error("Unexpected response from Spotify API");
+    }
+    
     return data.tracks.items || [];
   } catch (error) {
     console.error("Error searching Spotify:", error);
-    return [];
+    throw error;
   }
 };
