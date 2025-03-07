@@ -15,6 +15,8 @@ export interface Song {
   spotifyArtist?: string;
   spotifyThumbnail?: string;
   spotifyDuration?: string;
+  // Manual approval flag
+  manuallyApproved?: boolean;
 }
 
 export interface PlaylistData {

@@ -5,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp } from "lucide-react";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ interface ReviewStepProps {
   onAddSpotifySong: (query: string) => Promise<any[] | null>;
   onAddSpotifyTrack: (track: any) => void;
   onUpdate: (updatedSongs: Song[]) => void;
+  onManualApprove: (songId: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -32,12 +33,14 @@ const ReviewStep = ({
   onAddSpotifySong,
   onAddSpotifyTrack,
   onUpdate,
+  onManualApprove,
   loading
 }: ReviewStepProps) => {
   const [minConfidence, setMinConfidence] = useState(0); // Filter threshold
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
   
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
 
@@ -46,7 +49,8 @@ const ReviewStep = ({
     const songsByQuality = {
       excellent: selectedSongs.filter(song => (song.matchConfidence || 0) >= 80).length,
       good: selectedSongs.filter(song => (song.matchConfidence || 0) >= 60 && (song.matchConfidence || 0) < 80).length,
-      poor: selectedSongs.filter(song => (song.matchConfidence || 0) < 60).length
+      poor: selectedSongs.filter(song => (song.matchConfidence || 0) < 60).length,
+      manually: selectedSongs.filter(song => song.manuallyApproved).length
     };
     
     const avgConfidence = selectedSongs.length > 0 
@@ -59,8 +63,12 @@ const ReviewStep = ({
   // Filter songs based on match confidence
   const displayedSongs = useMemo(() => {
     return selectedSongs
-      .filter(song => (song.matchConfidence || 0) >= minConfidence)
-      .sort((a, b) => (b.matchConfidence || 0) - (a.matchConfidence || 0));
+      .filter(song => (song.matchConfidence || 0) >= minConfidence || song.manuallyApproved)
+      .sort((a, b) => {
+        if (a.manuallyApproved && !b.manuallyApproved) return -1;
+        if (!a.manuallyApproved && b.manuallyApproved) return 1;
+        return (b.matchConfidence || 0) - (a.matchConfidence || 0);
+      });
   }, [selectedSongs, minConfidence]);
 
   const handleContinue = () => {
@@ -74,8 +82,8 @@ const ReviewStep = ({
   // Change filter confidence level
   const handleFilterChange = (level: number) => {
     setMinConfidence(level);
-    const filteredCount = selectedSongs.filter(s => (s.matchConfidence || 0) >= level).length;
-    toast.info(`Showing ${filteredCount} songs with match quality of ${level}% or higher`);
+    const filteredCount = selectedSongs.filter(s => (s.matchConfidence || 0) >= level || s.manuallyApproved).length;
+    toast.info(`Showing ${filteredCount} songs with match quality of ${level}% or higher and manually approved songs`);
   };
   
   // Handle Spotify search
@@ -104,6 +112,20 @@ const ReviewStep = ({
     );
     onUpdate(updatedSongs);
     toast.success("Song removed from playlist");
+  };
+
+  // Handle manual approval of a song
+  const handleManualApprove = async (songId: string) => {
+    setApprovalLoading(songId);
+    try {
+      await onManualApprove(songId);
+      toast.success("Song manually approved");
+    } catch (error) {
+      toast.error("Failed to approve song");
+      console.error("Error approving song:", error);
+    } finally {
+      setApprovalLoading(null);
+    }
   };
   
   return (
@@ -169,6 +191,11 @@ const ReviewStep = ({
                       {Math.round((selectedSongs.length / songs.length) * 100)}% of library
                     </Badge>
                   )}
+                  {stats.songsByQuality.manually > 0 && (
+                    <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-500">
+                      {stats.songsByQuality.manually} manually approved
+                    </Badge>
+                  )}
                 </div>
               </div>
               
@@ -230,6 +257,20 @@ const ReviewStep = ({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 cursor-help">
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      <span>Manual: {stats.songsByQuality.manually}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Manually approved songs</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           
@@ -288,7 +329,7 @@ const ReviewStep = ({
             {displayedSongs.length > 0 ? (
               <ul className="space-y-3">
                 {displayedSongs.map(song => (
-                  <li key={song.id} className="glass-panel p-3 border border-gray-100/10 rounded-md bg-white/5 hover:bg-white/10 transition-colors">
+                  <li key={song.id} className={`glass-panel p-3 border rounded-md transition-colors ${song.manuallyApproved ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10' : 'border-gray-100/10 bg-white/5 hover:bg-white/10'}`}>
                     <div className="flex items-start gap-3">
                       {/* Left side - YouTube info */}
                       <div className="w-6 h-auto flex items-start mt-2">
@@ -342,8 +383,17 @@ const ReviewStep = ({
                       
                       {/* Match quality indicator in center */}
                       <div className="flex flex-col items-center justify-center px-1">
-                        <div className="text-sm font-medium">{song.matchConfidence || 0}%</div>
-                        <MatchQualityIndicator confidence={song.matchConfidence} showPercentage={false} />
+                        {song.manuallyApproved ? (
+                          <div className="text-xs font-medium text-blue-500 flex items-center gap-1">
+                            <ThumbsUp className="h-3 w-3" />
+                            <span>Approved</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-sm font-medium">{song.matchConfidence || 0}%</div>
+                            <MatchQualityIndicator confidence={song.matchConfidence} showPercentage={false} />
+                          </>
+                        )}
                       </div>
                       
                       {/* Right side - Spotify info */}
@@ -396,15 +446,32 @@ const ReviewStep = ({
                         </div>
                       </div>
                       
-                      {/* Remove button */}
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleRemoveSong(song.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {/* Action buttons */}
+                      <div className="flex gap-1">
+                        {!song.manuallyApproved && song.spotifyUri && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                            onClick={() => handleManualApprove(song.id)}
+                            disabled={approvalLoading === song.id}
+                          >
+                            {approvalLoading === song.id ? (
+                              <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 animate-spin rounded-full"></div>
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleRemoveSong(song.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </li>
                 ))}

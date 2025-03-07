@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 
@@ -39,7 +40,8 @@ const Index = () => {
     handleStartOver,
     handleOpenSpotify,
     handleAddSpotifySong,
-    handleAddSpotifyTrack
+    handleAddSpotifyTrack,
+    handleManualApprove
   } = usePlaylistConversion();
 
   // Check if user is logged in with Spotify
@@ -95,6 +97,7 @@ const Index = () => {
               onAddSpotifySong={handleAddSpotifySong}
               onAddSpotifyTrack={handleAddSpotifyTrack}
               onUpdate={handleSongUpdate}
+              onManualApprove={handleManualApprove}
               loading={loading}
             />
           )}

@@ -165,6 +165,30 @@ export const usePlaylistConversion = () => {
     setLoading(false);
   };
 
+  const handleManualApprove = async (songId: string) => {
+    try {
+      const updatedSongs = playlistData.songs.map(song => {
+        if (song.id === songId) {
+          return {
+            ...song,
+            manuallyApproved: true
+          };
+        }
+        return song;
+      });
+      
+      setPlaylistData({
+        ...playlistData,
+        songs: updatedSongs
+      });
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error manually approving song:", error);
+      return Promise.reject(error);
+    }
+  };
+
   const handleCreatePlaylist = async () => {
     setCurrentStep(ConversionStep.CREATE_PLAYLIST);
     setLoading(true);
@@ -177,11 +201,15 @@ export const usePlaylistConversion = () => {
         throw new Error("Spotify access token not found");
       }
       
+      const selectedSongs = playlistData.songs.filter(song => 
+        song.selected && (song.spotifyUri || song.manuallyApproved)
+      );
+      
       const result = await createSpotifyPlaylistFromSongs(
         accessToken,
         playlistData.title,
         playlistData.description || `Converted from YouTube with TuneMigrate`,
-        playlistData.songs,
+        selectedSongs,
         (progress) => {
           setConversionProgress(progress);
         }
@@ -244,6 +272,7 @@ export const usePlaylistConversion = () => {
     handleStartOver,
     handleOpenSpotify,
     handleAddSpotifySong,
-    handleAddSpotifyTrack
+    handleAddSpotifyTrack,
+    handleManualApprove
   };
 };
