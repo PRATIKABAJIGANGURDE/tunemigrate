@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { extractPlaylistId } from "@/services/youtubeService";
+import SpotifyIcon from "./icons/SpotifyIcon";
+import { initiateSpotifyLogin, isLoggedIn } from "@/services/spotifyService";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -15,6 +17,7 @@ interface UrlInputProps {
 const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const spotifyConnected = isLoggedIn();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +36,16 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
     
     setError(null);
     onSubmit(url);
+  };
+
+  const handleSpotifyLogin = async () => {
+    try {
+      await initiateSpotifyLogin();
+      // Login process will redirect to callback
+    } catch (error) {
+      console.error("Failed to login with Spotify:", error);
+      toast.error("Failed to connect with Spotify");
+    }
   };
 
   return (
@@ -82,6 +95,36 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
           >
             {loading ? "Processing..." : "Convert Playlist"}
           </Button>
+
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-muted"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-background px-2 text-xs text-muted-foreground">
+                OR
+              </span>
+            </div>
+          </div>
+
+          {!spotifyConnected ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full bg-spotify hover:bg-spotify-dark text-white"
+              onClick={handleSpotifyLogin}
+            >
+              <SpotifyIcon className="mr-2" size={20} />
+              Connect with Spotify
+            </Button>
+          ) : (
+            <div className="bg-green-50 text-green-700 rounded-lg py-2 px-4 text-sm flex items-center justify-center">
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Connected to Spotify
+            </div>
+          )}
 
           <div className="text-center pt-4">
             <p className="text-xs text-muted-foreground">
