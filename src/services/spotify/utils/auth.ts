@@ -90,7 +90,14 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
 /**
  * Refresh the access token
  */
-export const refreshAccessToken = async (refreshToken: string): Promise<{ access_token: string; expires_in: number }> => {
+export const refreshAccessToken = async (refreshToken?: string): Promise<string> => {
+  // If no refresh token provided, try to get it from localStorage
+  const token = refreshToken || localStorage.getItem('spotify_refresh_token');
+  
+  if (!token) {
+    throw new Error("No refresh token available");
+  }
+  
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
@@ -99,7 +106,7 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
     body: new URLSearchParams({
       client_id: CLIENT_ID,
       grant_type: 'refresh_token',
-      refresh_token: refreshToken
+      refresh_token: token
     })
   });
   
@@ -107,7 +114,21 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
     throw new Error(`Failed to refresh token: ${response.statusText}`);
   }
   
-  return response.json();
+  const data = await response.json();
+  
+  // Update the stored token
+  localStorage.setItem('spotify_access_token', data.access_token);
+  
+  // If we got a new refresh token, store that too
+  if (data.refresh_token) {
+    localStorage.setItem('spotify_refresh_token', data.refresh_token);
+  }
+  
+  // Update token expiry time
+  const expiryTime = Date.now() + (data.expires_in * 1000);
+  localStorage.setItem('spotify_token_expiry', expiryTime.toString());
+  
+  return data.access_token;
 };
 
 /**
