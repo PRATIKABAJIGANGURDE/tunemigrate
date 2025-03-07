@@ -17,6 +17,8 @@ export interface Song {
   spotifyDuration?: string;
   // Manual approval flag
   manuallyApproved?: boolean;
+  // Replacement flag to indicate if this song was manually replaced
+  isReplacement?: boolean;
 }
 
 export interface PlaylistData {

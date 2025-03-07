@@ -5,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw } from "lucide-react";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -41,8 +41,16 @@ const ReviewStep = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
+  const [replacingSongId, setReplacingSongId] = useState<string | null>(null);
+  const [replaceSearchQuery, setReplaceSearchQuery] = useState("");
   
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
+
+  // Get the song being replaced (if any)
+  const replacingSong = useMemo(() => {
+    if (!replacingSongId) return null;
+    return songs.find(s => s.id === replacingSongId) || null;
+  }, [songs, replacingSongId]);
 
   // Calculate match quality statistics
   const stats = useMemo(() => {
@@ -65,6 +73,8 @@ const ReviewStep = ({
     return selectedSongs
       .filter(song => (song.matchConfidence || 0) >= minConfidence || song.manuallyApproved)
       .sort((a, b) => {
+        if (a.isReplacement && !b.isReplacement) return -1;
+        if (!a.isReplacement && b.isReplacement) return 1;
         if (a.manuallyApproved && !b.manuallyApproved) return -1;
         if (!a.manuallyApproved && b.manuallyApproved) return 1;
         return (b.matchConfidence || 0) - (a.matchConfidence || 0);
@@ -126,6 +136,73 @@ const ReviewStep = ({
     } finally {
       setApprovalLoading(null);
     }
+  };
+  
+  // New function to start replacing a song
+  const handleStartReplace = (songId: string) => {
+    const song = songs.find(s => s.id === songId);
+    if (!song) return;
+    
+    setReplacingSongId(songId);
+    setReplaceSearchQuery(`${song.title} ${song.artist}`);
+    setShowDialog(true);
+  };
+  
+  // Handle replacing a song with selected Spotify track
+  const handleReplaceSong = (track: any) => {
+    if (!replacingSongId) return;
+    
+    const updatedSongs = songs.map(song => {
+      if (song.id === replacingSongId) {
+        return {
+          ...song,
+          spotifyId: track.id,
+          spotifyUri: track.uri,
+          spotifyTitle: track.name,
+          spotifyArtist: track.artists.map((a: any) => a.name).join(", "),
+          spotifyThumbnail: track.album?.images?.[0]?.url,
+          spotifyDuration: track.duration_ms ? 
+            `${Math.floor((track.duration_ms / 1000) / 60)}:${String(Math.floor((track.duration_ms / 1000) % 60)).padStart(2, '0')}` : 
+            undefined,
+          matchConfidence: 100, // Full confidence as it's manually selected
+          manuallyApproved: true,
+          isReplacement: true
+        };
+      }
+      return song;
+    });
+    
+    onUpdate(updatedSongs);
+    setShowDialog(false);
+    setReplacingSongId(null);
+    setReplaceSearchQuery("");
+    toast.success("Song replaced successfully");
+  };
+  
+  // Search Spotify for replacement
+  const handleReplaceSearch = async () => {
+    if (!replaceSearchQuery.trim()) {
+      toast.info("Please enter a search query");
+      return;
+    }
+    
+    if (!getAccessToken()) {
+      toast.error("You need to connect to Spotify first");
+      return;
+    }
+    
+    const results = await onAddSpotifySong(replaceSearchQuery.trim());
+    if (results) {
+      setSearchResults(results);
+    }
+  };
+  
+  // Close dialog and reset state
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setReplacingSongId(null);
+    setReplaceSearchQuery("");
+    setSearchResults([]);
   };
   
   return (
@@ -324,12 +401,15 @@ const ReviewStep = ({
             </Button>
           </div>
 
-          {/* Song list - UPDATED UI */}
+          {/* Song list */}
           <div className="max-h-[400px] overflow-y-auto pr-2 rounded-md">
             {displayedSongs.length > 0 ? (
               <ul className="space-y-3">
                 {displayedSongs.map(song => (
-                  <li key={song.id} className={`glass-panel p-3 border rounded-md transition-colors ${song.manuallyApproved ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10' : 'border-gray-100/10 bg-white/5 hover:bg-white/10'}`}>
+                  <li key={song.id} className={`glass-panel p-3 border rounded-md transition-colors 
+                    ${song.isReplacement ? 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10' : 
+                      song.manuallyApproved ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10' : 
+                      'border-gray-100/10 bg-white/5 hover:bg-white/10'}`}>
                     <div className="flex items-start gap-3">
                       {/* Left side - YouTube info */}
                       <div className="w-6 h-auto flex items-start mt-2">
@@ -383,7 +463,12 @@ const ReviewStep = ({
                       
                       {/* Match quality indicator in center */}
                       <div className="flex flex-col items-center justify-center px-1">
-                        {song.manuallyApproved ? (
+                        {song.isReplacement ? (
+                          <div className="text-xs font-medium text-purple-500 flex items-center gap-1">
+                            <RefreshCw className="h-3 w-3" />
+                            <span>Replaced</span>
+                          </div>
+                        ) : song.manuallyApproved ? (
                           <div className="text-xs font-medium text-blue-500 flex items-center gap-1">
                             <ThumbsUp className="h-3 w-3" />
                             <span>Approved</span>
@@ -413,28 +498,45 @@ const ReviewStep = ({
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="font-medium text-sm leading-tight line-clamp-1 break-words hover:text-green-400 cursor-help">
-                                {song.spotifyTitle || song.title}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-sm">
-                              <p className="text-sm">{song.spotifyTitle || song.title}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          
-                          <div className="flex items-center">
+                          {song.spotifyTitle ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <p className="text-xs text-muted-foreground truncate hover:text-green-400 cursor-help">
-                                  {song.spotifyArtist || song.artist}
+                                <p className="font-medium text-sm leading-tight line-clamp-1 break-words hover:text-green-400 cursor-help">
+                                  {song.spotifyTitle}
                                 </p>
                               </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p className="text-xs">{song.spotifyArtist || song.artist}</p>
+                              <TooltipContent side="top" className="max-w-sm">
+                                <p className="text-sm">{song.spotifyTitle}</p>
                               </TooltipContent>
                             </Tooltip>
+                          ) : (
+                            <p className="font-medium text-sm text-muted-foreground italic">No match found</p>
+                          )}
+                          
+                          <div className="flex items-center">
+                            {song.spotifyArtist ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <p className="text-xs text-muted-foreground truncate hover:text-green-400 cursor-help">
+                                    {song.spotifyArtist}
+                                  </p>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="text-xs">{song.spotifyArtist}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                <Button 
+                                  variant="link" 
+                                  size="sm" 
+                                  className="h-6 p-0 text-xs text-blue-400 hover:text-blue-300"
+                                  onClick={() => handleStartReplace(song.id)}
+                                >
+                                  Find replacement
+                                </Button>
+                              </p>
+                            )}
                             
                             {song.spotifyDuration && (
                               <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
@@ -448,7 +550,7 @@ const ReviewStep = ({
                       
                       {/* Action buttons */}
                       <div className="flex gap-1">
-                        {!song.manuallyApproved && song.spotifyUri && (
+                        {!song.manuallyApproved && !song.isReplacement && song.spotifyUri && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -461,6 +563,16 @@ const ReviewStep = ({
                             ) : (
                               <Check className="h-4 w-4" />
                             )}
+                          </Button>
+                        )}
+                        {!song.spotifyUri && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                            onClick={() => handleStartReplace(song.id)}
+                          >
+                            <RefreshCw className="h-4 w-4" />
                           </Button>
                         )}
                         <Button 
@@ -486,58 +598,93 @@ const ReviewStep = ({
         </div>
       </AnimatedCard>
       
-      {/* Spotify search results dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      {/* Dialog for searching and adding songs */}
+      <Dialog open={showDialog} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Spotify Search Results</DialogTitle>
+            <DialogTitle>
+              {replacingSongId ? "Replace Song" : "Add Song to Playlist"}
+            </DialogTitle>
             <DialogDescription>
-              Choose a song to add to your playlist
+              {replacingSongId 
+                ? `Find a replacement for "${replacingSong?.title || 'song'}"`
+                : "Search for a song to add to your playlist"}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="max-h-[300px] overflow-y-auto">
-            {searchResults.length > 0 ? (
-              <ul className="space-y-2">
-                {searchResults.map(track => (
-                  <li 
-                    key={track.id} 
-                    className="flex items-center gap-3 p-2 hover:bg-secondary/50 cursor-pointer rounded-md"
-                    onClick={() => {
-                      onAddSpotifyTrack(track);
-                      setShowDialog(false);
-                    }}
-                  >
-                    {track.album?.images?.[0]?.url ? (
-                      <img 
-                        src={track.album.images[0].url} 
-                        alt={track.name} 
-                        className="w-10 h-10 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-muted flex items-center justify-center rounded">
-                        <MusicIcon className="h-4 w-4" />
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={replacingSongId ? replaceSearchQuery : searchQuery}
+                  onChange={(e) => replacingSongId 
+                    ? setReplaceSearchQuery(e.target.value) 
+                    : setSearchQuery(e.target.value)}
+                  placeholder="Search Spotify..."
+                  className="pl-10"
+                  onKeyDown={(e) => e.key === 'Enter' && (replacingSongId ? handleReplaceSearch() : handleSearch())}
+                />
+              </div>
+              <Button 
+                onClick={replacingSongId ? handleReplaceSearch : handleSearch} 
+                disabled={loading}
+              >
+                Search
+              </Button>
+            </div>
+            
+            <div className="max-h-[300px] overflow-y-auto">
+              {searchResults.length > 0 ? (
+                <ul className="space-y-2">
+                  {searchResults.map(track => (
+                    <li 
+                      key={track.id} 
+                      className="flex items-center gap-3 p-2 hover:bg-secondary/50 cursor-pointer rounded-md"
+                      onClick={() => {
+                        if (replacingSongId) {
+                          handleReplaceSong(track);
+                        } else {
+                          onAddSpotifyTrack(track);
+                          setShowDialog(false);
+                        }
+                      }}
+                    >
+                      {track.album?.images?.[0]?.url ? (
+                        <img 
+                          src={track.album.images[0].url} 
+                          alt={track.name} 
+                          className="w-10 h-10 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-muted flex items-center justify-center rounded">
+                          <MusicIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{track.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {track.artists.map((a: any) => a.name).join(", ")}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{track.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {track.artists.map((a: any) => a.name).join(", ")}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-center py-4 text-muted-foreground">No results found</p>
-            )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center py-4 text-muted-foreground">
+                  {searchResults.length === 0 && (replacingSongId ? replaceSearchQuery : searchQuery) 
+                    ? "No results found" 
+                    : "Search for songs above"}
+                </p>
+              )}
+            </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+            <Button variant="outline" onClick={handleCloseDialog}>
               Cancel
             </Button>
           </DialogFooter>

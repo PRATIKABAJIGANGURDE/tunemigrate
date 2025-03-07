@@ -151,9 +151,9 @@ export const createSpotifyPlaylistFromSongs = async (
   const playlist = await createPlaylist(accessToken, playlistName, playlistDescription);
   
   // Get all songs with a spotifyUri
-  // This now includes both automatically matched and manually approved songs
+  // This now includes automatically matched, manually approved, and replaced songs
   const trackUris = enhancedSongs
-    .filter(song => song.selected && song.spotifyUri)
+    .filter(song => song.selected && (song.spotifyUri || song.isReplacement))
     .map(song => song.spotifyUri as string);
   
   if (trackUris.length > 0) {
