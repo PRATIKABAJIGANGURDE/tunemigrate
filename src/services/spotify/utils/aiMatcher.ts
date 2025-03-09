@@ -1,4 +1,3 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Song } from "@/types";
 
@@ -45,6 +44,82 @@ export const extractArtistWithAI = async (title: string): Promise<string> => {
 };
 
 /**
+ * Enhanced song title and artist analysis using AI
+ * This helps identify if a song is a remix, cover, or similar variations
+ */
+export const analyzeSongDetailsWithAI = async (title: string, artist: string): Promise<{
+  isRemix: boolean;
+  isCover: boolean;
+  isLive: boolean;
+  isAcoustic: boolean;
+  extractedTitle: string;
+  extractedArtist: string;
+  confidence: number;
+}> => {
+  if (!geminiApiKey) {
+    // Fallback to regex-based detection
+    const specialVersion = detectSpecialVersion(title);
+    return {
+      ...specialVersion,
+      extractedTitle: title,
+      extractedArtist: artist,
+      confidence: 70 // Lower confidence since we're not using AI
+    };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    const prompt = `Analyze this song information and return a JSON object:
+    
+    Song Title: ${title}
+    Artist: ${artist}
+    
+    Return a JSON object with these fields:
+    - isRemix: boolean (true if this is a remix version)
+    - isCover: boolean (true if this is a cover of another song)
+    - isLive: boolean (true if this is a live recording)
+    - isAcoustic: boolean (true if this is an acoustic version)
+    - extractedTitle: string (the clean song title without descriptors)
+    - extractedArtist: string (the main artist name)
+    - confidence: number (1-100, how confident are you in this analysis)
+    
+    Only return valid parseable JSON.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const analysisText = response.text().trim();
+    
+    try {
+      const analysis = JSON.parse(analysisText);
+      console.log("AI analyzed song details:", analysis);
+      return analysis;
+    } catch (e) {
+      console.error("Failed to parse AI response:", analysisText);
+      // Fallback to regex-based detection
+      const specialVersion = detectSpecialVersion(title);
+      return {
+        ...specialVersion,
+        extractedTitle: title,
+        extractedArtist: artist,
+        confidence: 60
+      };
+    }
+  } catch (error) {
+    console.error("AI Song Analysis Error:", error);
+    // Fallback to regex detection
+    const specialVersion = detectSpecialVersion(title);
+    return {
+      ...specialVersion,
+      extractedTitle: title,
+      extractedArtist: artist,
+      confidence: 60
+    };
+  }
+};
+
+/**
  * Fallback method to extract artist when AI is unavailable
  */
 export const fallbackArtistExtraction = (title: string): string => {
@@ -62,6 +137,24 @@ export const fallbackArtistExtraction = (title: string): string => {
   }
 
   return '';
+};
+
+/**
+ * Detect if the song is a live version, remix, or cover
+ */
+export const detectSpecialVersion = (title: string): { 
+  isLive: boolean; 
+  isRemix: boolean;
+  isCover: boolean;
+  isAcoustic: boolean;
+} => {
+  const lowerTitle = title.toLowerCase();
+  return {
+    isLive: /\blive\b|\bconcert\b|\bperformance\b|\bunplugged\b|\bsession\b/i.test(lowerTitle),
+    isRemix: /\bremix\b|\bedit\b|\bflip\b|\bmashup\b|\brework\b/i.test(lowerTitle),
+    isCover: /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(lowerTitle),
+    isAcoustic: /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(lowerTitle)
+  };
 };
 
 /**
@@ -148,6 +241,77 @@ export const compareArtistsFlexibly = (youtubeName: string, spotifyName: string)
   if (youtubeWords.length === 0) return 30; // No meaningful words to compare
   
   return Math.min(100, Math.round((matchCount / youtubeWords.length) * 100));
+};
+
+/**
+ * Enhanced match scoring system - more heavily weights key indicators
+ */
+export const getEnhancedMatchDetails = async (song: Song, spotifyTrack: any): Promise<{
+  artistMatch: number;
+  titleMatch: number;
+  durationMatch: number;
+  dateMatch: number;
+  totalScore: number;
+  enhancedScore: number;
+  confidence: string;
+}> => {
+  // Get the basic match details first
+  const baseDetails = getMatchDetails(song, spotifyTrack);
+  
+  // Additional smart matching factors
+  let enhancementScore = 0;
+  
+  // 1. Track special versions correctly (remix, live, acoustic, etc)
+  if (song.title && spotifyTrack.name) {
+    const songIsSpecial = detectSpecialVersion(song.title);
+    const spotifyIsSpecial = detectSpecialVersion(spotifyTrack.name);
+    
+    // If they match on their "special" status, that's a good sign
+    if (songIsSpecial.isRemix === spotifyIsSpecial.isRemix) enhancementScore += 5;
+    if (songIsSpecial.isLive === spotifyIsSpecial.isLive) enhancementScore += 5;
+    if (songIsSpecial.isCover === spotifyIsSpecial.isCover) enhancementScore += 5;
+    if (songIsSpecial.isAcoustic === spotifyIsSpecial.isAcoustic) enhancementScore += 5;
+  }
+  
+  // 2. Popularity boost - more popular tracks are more likely to be the one we want
+  if (spotifyTrack.popularity > 70) enhancementScore += 5;
+  
+  // 3. Album match - if song title mentions album and it matches
+  if (song.title && spotifyTrack.album?.name) {
+    const normalizedSongTitle = song.title.toLowerCase();
+    const normalizedAlbumName = spotifyTrack.album.name.toLowerCase();
+    
+    if (normalizedSongTitle.includes(normalizedAlbumName) || 
+        normalizedAlbumName.includes(normalizedSongTitle.split('-')[0].trim())) {
+      enhancementScore += 10;
+    }
+  }
+  
+  // 4. Artist match improvements - check all artists, not just primary
+  if (song.artist && spotifyTrack.artists) {
+    const normalizedSongArtist = song.artist.toLowerCase();
+    for (const artist of spotifyTrack.artists) {
+      if (artist.name.toLowerCase().includes(normalizedSongArtist) || 
+          normalizedSongArtist.includes(artist.name.toLowerCase())) {
+        enhancementScore += 5;
+        break;
+      }
+    }
+  }
+  
+  // Calculate final enhanced score
+  const enhancedScore = Math.min(100, baseDetails.totalScore + enhancementScore);
+  
+  // Determine confidence level
+  let confidence = "low";
+  if (enhancedScore >= 85) confidence = "high";
+  else if (enhancedScore >= 70) confidence = "medium";
+  
+  return {
+    ...baseDetails,
+    enhancedScore,
+    confidence
+  };
 };
 
 /**

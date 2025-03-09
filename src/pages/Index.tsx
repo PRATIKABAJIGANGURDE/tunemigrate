@@ -1,10 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
-
-// Components
-import Header from "@/components/Header";
-import ProcessingSteps from "@/components/ProcessingSteps";
+import React from "react";
+import { ConversionStep } from "@/types";
 import UrlInput from "@/components/UrlInput";
 import ExtractionStep from "@/components/ExtractionStep";
 import SongEditStep from "@/components/SongEditStep";
@@ -12,18 +8,13 @@ import NamingStep from "@/components/NamingStep";
 import ReviewStep from "@/components/ReviewStep";
 import CreationStep from "@/components/CreationStep";
 import CompletedStep from "@/components/CompletedStep";
-
-// Types
-import { ConversionStep } from "@/types";
-
-// Hooks
+import SpotifyAuth from "@/components/SpotifyAuth";
 import { usePlaylistConversion } from "@/hooks/usePlaylistConversion";
-
-// Services
-import { isLoggedIn as isSpotifyLoggedIn } from "@/services/spotifyService";
+import { isLoggedIn } from "@/services/spotifyService";
+import ProcessingSteps from "@/components/ProcessingSteps";
+import SpotifyLoginPrompt from "@/components/SpotifyLoginPrompt";
 
 const Index = () => {
-  const [spotifyConnected, setSpotifyConnected] = useState(false);
   const {
     currentStep,
     loading,
@@ -44,25 +35,44 @@ const Index = () => {
     handleManualApprove
   } = usePlaylistConversion();
 
-  // Check if user is logged in with Spotify
-  useEffect(() => {
-    setSpotifyConnected(isSpotifyLoggedIn());
+  const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(isLoggedIn());
+
+  React.useEffect(() => {
+    const checkLoginStatus = () => {
+      setIsUserLoggedIn(isLoggedIn());
+    };
+    
+    // Check initially
+    checkLoginStatus();
+    
+    // Add event listener to check when window gets focus
+    window.addEventListener('focus', checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener('focus', checkLoginStatus);
+    };
   }, []);
 
-  const handleSpotifyLogin = () => {
-    // The actual login is handled in the SpotifyAuth component
-    // We just need to update the state when the callback signals success
-    setSpotifyConnected(true);
+  const handleLogin = () => {
+    setIsUserLoggedIn(true);
   };
 
+  // Show login prompt if user is not at step 1 and not logged in
+  const showLoginPrompt = currentStep === ConversionStep.INPUT_URL && !isUserLoggedIn;
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="container max-w-3xl px-4 mx-auto">
-        <Header />
+    <div className="container mx-auto p-4 max-w-5xl">
+      <div className="space-y-8">
+        {/* Show login prompt at the top if not logged in */}
+        {showLoginPrompt && (
+          <div className="mb-8">
+            <SpotifyLoginPrompt />
+          </div>
+        )}
         
         <ProcessingSteps currentStep={currentStep} />
         
-        <AnimatePresence mode="wait">
+        <div className="p-4 bg-white rounded-xl shadow-sm border">
           {currentStep === ConversionStep.INPUT_URL && (
             <UrlInput onSubmit={handleUrlSubmit} loading={loading} />
           )}
@@ -76,53 +86,49 @@ const Index = () => {
               songs={playlistData.songs}
               onUpdate={handleSongUpdate}
               onContinue={handleContinueToNaming}
+              loading={loading}
             />
           )}
           
           {currentStep === ConversionStep.NAME_PLAYLIST && (
             <NamingStep 
-              initialName={playlistData.title}
-              isSpotifyConnected={spotifyConnected}
+              title={playlistData.title}
               onSubmit={handlePlaylistNameSubmit}
-              onLogin={handleSpotifyLogin}
+              loading={loading}
             />
           )}
           
           {currentStep === ConversionStep.REVIEW_MATCHES && (
             <ReviewStep 
-              playlistTitle={playlistData.title}
               songs={playlistData.songs}
-              onContinue={handleCreatePlaylist}
-              onBack={handleBackToNaming}
+              onCreatePlaylist={handleCreatePlaylist}
+              onBackToNaming={handleBackToNaming}
+              loading={loading}
+              matchStats={matchingStats}
+              progress={conversionProgress}
               onAddSpotifySong={handleAddSpotifySong}
               onAddSpotifyTrack={handleAddSpotifyTrack}
-              onUpdate={handleSongUpdate}
               onManualApprove={handleManualApprove}
-              loading={loading}
             />
           )}
           
           {currentStep === ConversionStep.CREATE_PLAYLIST && (
-            <CreationStep 
-              playlistTitle={playlistData.title}
-              selectedSongsCount={playlistData.songs.filter(s => s.selected).length}
-              currentProgress={conversionProgress}
-            />
+            <CreationStep progress={conversionProgress} />
           )}
           
           {currentStep === ConversionStep.COMPLETED && (
             <CompletedStep 
-              playlistTitle={playlistData.title}
-              matchingStats={matchingStats}
-              onStartOver={handleStartOver}
+              playlistUrl={playlistUrl}
+              stats={matchingStats}
               onOpenSpotify={handleOpenSpotify}
+              onStartOver={handleStartOver}
             />
           )}
-        </AnimatePresence>
-        
-        <footer className="mt-auto py-8 text-center text-xs text-muted-foreground">
-          <p>TuneMigrate &copy; {new Date().getFullYear()} - YouTube to Spotify Converter</p>
-        </footer>
+          
+          <div className="mt-8 border-t pt-6">
+            <SpotifyAuth onLogin={handleLogin} isLoggedIn={isUserLoggedIn} />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-
 /**
  * Spotify Matching Services - Search and Match Tracks
  */
@@ -13,16 +12,42 @@ import {
   cleanSongTitle,
   extractArtistName
 } from "./utils/songCleaner";
-import { getMatchDetails } from "./utils/aiMatcher";
+import { 
+  getMatchDetails,
+  getEnhancedMatchDetails,
+  analyzeSongDetailsWithAI
+} from "./utils/aiMatcher";
 import { refreshAccessToken } from "./utils/auth";
 
 /**
- * Search for a track on Spotify
+ * Search for a track on Spotify with AI enhancement
  */
 export const searchTrack = async (song: Song, accessToken: string): Promise<any | null> => {
   try {
-    const cleanedTitle = cleanSongTitle(song.title);
-    const artist = extractArtistName(song.artist);
+    // First try analyzing the song with AI if we have an API key
+    let cleanedTitle = cleanSongTitle(song.title);
+    let artist = extractArtistName(song.artist);
+    
+    // Try AI-enhanced analysis if possible
+    try {
+      const analysis = await analyzeSongDetailsWithAI(song.title, song.artist);
+      
+      if (analysis && analysis.confidence > 75) {
+        // Use AI-extracted details if confidence is high
+        cleanedTitle = analysis.extractedTitle;
+        artist = analysis.extractedArtist;
+        
+        console.log("Using AI-enhanced song details:", {
+          originalTitle: song.title,
+          cleanedTitle,
+          originalArtist: song.artist,
+          artist
+        });
+      }
+    } catch (error) {
+      console.log("AI analysis unavailable, using basic cleaning:", error);
+      // Continue with basic cleaned title and artist
+    }
     
     // First try: search with both title and artist
     let tracks = await searchWithTitleAndArtist(cleanedTitle, artist, accessToken);
@@ -36,7 +61,7 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<any 
       return null;
     }
     
-    // Find the best match
+    // Find the best match with AI-enhanced algorithms
     const bestMatch = await findBestMatch(song, tracks);
     
     return bestMatch;
@@ -124,38 +149,38 @@ const searchWithTitleOnly = async (title: string, accessToken: string): Promise<
 };
 
 /**
- * Calculate match confidence score
+ * Calculate match confidence score with AI enhancements
  */
 export const calculateMatchConfidence = async (song: Song, track: any): Promise<number> => {
-  let confidence = 0;
-  
-  // Title Similarity (25% weight)
-  const titleSimilarity = calculateStringSimilarity(song.title, track.name);
-  confidence += titleSimilarity * 0.25;
-  
-  // Artist Similarity (25% weight)
-  let artistSimilarity = 0;
   try {
-    // Get detailed match info from AI matcher and extract artist match value
-    const matchDetails = getMatchDetails(song, track);
-    artistSimilarity = matchDetails.artistMatch / 100; // Convert to 0-1 scale
+    // Use the enhanced AI matching algorithm
+    const matchDetails = await getEnhancedMatchDetails(song, track);
+    return matchDetails.enhancedScore;
   } catch (error) {
-    console.error("Error getting AI match details:", error);
-    // Fallback: basic string similarity if AI fails
+    console.error("Error with enhanced matching, falling back to basic:", error);
+    
+    // Basic matching as fallback
+    let confidence = 0;
+    
+    // Title Similarity (25% weight)
+    const titleSimilarity = calculateStringSimilarity(song.title, track.name);
+    confidence += titleSimilarity * 0.25;
+    
+    // Artist Similarity (25% weight)
     const artistString = track.artists.map((a: any) => a.name).join(" ");
-    artistSimilarity = calculateStringSimilarity(song.artist, artistString);
+    const artistSimilarity = calculateStringSimilarity(song.artist, artistString);
+    confidence += artistSimilarity * 0.25;
+    
+    // Duration Comparison (40% weight)
+    const durationScore = compareDurations(song.duration, track.duration_ms);
+    confidence += durationScore / 100 * 0.40;
+    
+    // Release Date Comparison (10% weight)
+    const releaseDateScore = compareReleaseDates(song.uploadDate, track.album.release_date);
+    confidence += releaseDateScore / 100 * 0.10;
+    
+    return Math.min(100, Math.round(confidence * 100));
   }
-  confidence += artistSimilarity * 0.25;
-  
-  // Duration Comparison (40% weight - increased importance)
-  const durationScore = compareDurations(song.duration, track.duration_ms);
-  confidence += durationScore / 100 * 0.40;
-  
-  // Release Date Comparison (10% weight)
-  const releaseDateScore = compareReleaseDates(song.uploadDate, track.album.release_date);
-  confidence += releaseDateScore / 100 * 0.10;
-  
-  return Math.min(100, Math.round(confidence * 100));
 };
 
 /**

@@ -31,7 +31,7 @@ export {
   searchTrack,
   calculateMatchConfidence,
   findBestMatch,
-  searchSpotifySongs  // New export for searching songs
+  searchSpotifySongs
 } from './spotify/matcher';
 
 export {
@@ -41,10 +41,13 @@ export {
   createSpotifyPlaylistFromSongs
 } from './spotify/playlist';
 
-// Export AI matching utilities
+// Export AI matching utilities with enhanced functionality
 export {
   extractArtistWithAI,
   setGeminiApiKey,
   getGeminiApiKey,
-  getMatchDetails
+  getMatchDetails,
+  getEnhancedMatchDetails,
+  analyzeSongDetailsWithAI
 } from './spotify/utils/aiMatcher';
+
