@@ -5,17 +5,15 @@ import PlaylistNaming from "./PlaylistNaming";
 import SpotifyAuth from "./SpotifyAuth";
 
 interface NamingStepProps {
-  initialName: string;
-  isSpotifyConnected: boolean;
+  title: string;
   onSubmit: (name: string, description: string) => void;
-  onLogin: () => void;
+  loading?: boolean;
 }
 
 const NamingStep = ({ 
-  initialName, 
-  isSpotifyConnected, 
+  title, 
   onSubmit, 
-  onLogin 
+  loading = false 
 }: NamingStepProps) => {
   return (
     <motion.div
@@ -27,12 +25,8 @@ const NamingStep = ({
     >
       <AnimatedCard>
         <PlaylistNaming 
-          initialName={initialName}
+          initialName={title}
           onSubmit={onSubmit}
-        />
-        <SpotifyAuth 
-          onLogin={onLogin} 
-          isLoggedIn={isSpotifyConnected}
         />
       </AnimatedCard>
     </motion.div>

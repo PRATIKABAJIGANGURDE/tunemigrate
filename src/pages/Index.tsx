@@ -8,7 +8,6 @@ import NamingStep from "@/components/NamingStep";
 import ReviewStep from "@/components/ReviewStep";
 import CreationStep from "@/components/CreationStep";
 import CompletedStep from "@/components/CompletedStep";
-import SpotifyAuth from "@/components/SpotifyAuth";
 import { usePlaylistConversion } from "@/hooks/usePlaylistConversion";
 import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
@@ -53,10 +52,6 @@ const Index = () => {
     };
   }, []);
 
-  const handleLogin = () => {
-    setIsUserLoggedIn(true);
-  };
-
   // Show login prompt if user is not at step 1 and not logged in
   const showLoginPrompt = currentStep === ConversionStep.INPUT_URL && !isUserLoggedIn;
 
@@ -86,7 +81,6 @@ const Index = () => {
               songs={playlistData.songs}
               onUpdate={handleSongUpdate}
               onContinue={handleContinueToNaming}
-              loading={loading}
             />
           )}
           
@@ -101,11 +95,9 @@ const Index = () => {
           {currentStep === ConversionStep.REVIEW_MATCHES && (
             <ReviewStep 
               songs={playlistData.songs}
-              onCreatePlaylist={handleCreatePlaylist}
-              onBackToNaming={handleBackToNaming}
-              loading={loading}
+              onContinue={handleCreatePlaylist}
+              onBack={handleBackToNaming}
               matchStats={matchingStats}
-              progress={conversionProgress}
               onAddSpotifySong={handleAddSpotifySong}
               onAddSpotifyTrack={handleAddSpotifyTrack}
               onManualApprove={handleManualApprove}
@@ -113,21 +105,17 @@ const Index = () => {
           )}
           
           {currentStep === ConversionStep.CREATE_PLAYLIST && (
-            <CreationStep progress={conversionProgress} />
+            <CreationStep />
           )}
           
           {currentStep === ConversionStep.COMPLETED && (
             <CompletedStep 
-              playlistUrl={playlistUrl}
-              stats={matchingStats}
+              url={playlistUrl}
+              matchStats={matchingStats}
               onOpenSpotify={handleOpenSpotify}
               onStartOver={handleStartOver}
             />
           )}
-          
-          <div className="mt-8 border-t pt-6">
-            <SpotifyAuth onLogin={handleLogin} isLoggedIn={isUserLoggedIn} />
-          </div>
         </div>
       </div>
     </div>
