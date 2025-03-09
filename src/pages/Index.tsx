@@ -11,7 +11,6 @@ import CompletedStep from "@/components/CompletedStep";
 import { usePlaylistConversion } from "@/hooks/usePlaylistConversion";
 import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
-import SpotifyLoginPrompt from "@/components/SpotifyLoginPrompt";
 import Header from "@/components/Header";
 
 const Index = () => {
@@ -53,9 +52,6 @@ const Index = () => {
     };
   }, []);
 
-  // Show login prompt only at the input URL step if not logged in
-  const showLoginPrompt = currentStep === ConversionStep.INPUT_URL && !isUserLoggedIn;
-
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
 
@@ -64,13 +60,6 @@ const Index = () => {
       <div className="space-y-8">
         {/* Header component */}
         <Header />
-        
-        {/* Only show login prompt at input URL step */}
-        {showLoginPrompt && (
-          <div className="mb-8">
-            <SpotifyLoginPrompt />
-          </div>
-        )}
         
         <ProcessingSteps currentStep={currentStep} />
         
