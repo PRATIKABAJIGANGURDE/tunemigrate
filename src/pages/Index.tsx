@@ -12,6 +12,7 @@ import { usePlaylistConversion } from "@/hooks/usePlaylistConversion";
 import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
 import SpotifyLoginPrompt from "@/components/SpotifyLoginPrompt";
+import Header from "@/components/Header";
 
 const Index = () => {
   const {
@@ -61,6 +62,9 @@ const Index = () => {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="space-y-8">
+        {/* Add Header component at the top */}
+        <Header />
+        
         {/* Show login prompt at the top if not logged in */}
         {showLoginPrompt && (
           <div className="mb-8">
