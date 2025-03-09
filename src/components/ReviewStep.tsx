@@ -5,13 +5,14 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw, Info } from "lucide-react";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getAccessToken } from "@/services/spotifyService";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ReviewStepProps {
   playlistTitle: string;
@@ -46,13 +47,11 @@ const ReviewStep = ({
   
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
 
-  // Get the song being replaced (if any)
   const replacingSong = useMemo(() => {
     if (!replacingSongId) return null;
     return songs.find(s => s.id === replacingSongId) || null;
   }, [songs, replacingSongId]);
 
-  // Calculate match quality statistics
   const stats = useMemo(() => {
     const songsByQuality = {
       excellent: selectedSongs.filter(song => (song.matchConfidence || 0) >= 80).length,
@@ -68,7 +67,6 @@ const ReviewStep = ({
     return { songsByQuality, avgConfidence };
   }, [selectedSongs]);
 
-  // Filter songs based on match confidence
   const displayedSongs = useMemo(() => {
     return selectedSongs
       .filter(song => (song.matchConfidence || 0) >= minConfidence || song.manuallyApproved)
@@ -89,14 +87,12 @@ const ReviewStep = ({
     onContinue();
   };
 
-  // Change filter confidence level
   const handleFilterChange = (level: number) => {
     setMinConfidence(level);
     const filteredCount = selectedSongs.filter(s => (s.matchConfidence || 0) >= level || s.manuallyApproved).length;
     toast.info(`Showing ${filteredCount} songs with match quality of ${level}% or higher and manually approved songs`);
   };
-  
-  // Handle Spotify search
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       toast.info("Please enter a search query");
@@ -115,7 +111,6 @@ const ReviewStep = ({
     }
   };
 
-  // Handle removing song from playlist
   const handleRemoveSong = (songId: string) => {
     const updatedSongs = songs.map(song => 
       song.id === songId ? { ...song, selected: false } : song
@@ -124,7 +119,6 @@ const ReviewStep = ({
     toast.success("Song removed from playlist");
   };
 
-  // Handle manual approval of a song
   const handleManualApprove = async (songId: string) => {
     setApprovalLoading(songId);
     try {
@@ -137,8 +131,7 @@ const ReviewStep = ({
       setApprovalLoading(null);
     }
   };
-  
-  // New function to start replacing a song
+
   const handleStartReplace = (songId: string) => {
     const song = songs.find(s => s.id === songId);
     if (!song) return;
@@ -147,8 +140,7 @@ const ReviewStep = ({
     setReplaceSearchQuery(`${song.title} ${song.artist}`);
     setShowDialog(true);
   };
-  
-  // Handle replacing a song with selected Spotify track
+
   const handleReplaceSong = (track: any) => {
     if (!replacingSongId) return;
     
@@ -164,7 +156,7 @@ const ReviewStep = ({
           spotifyDuration: track.duration_ms ? 
             `${Math.floor((track.duration_ms / 1000) / 60)}:${String(Math.floor((track.duration_ms / 1000) % 60)).padStart(2, '0')}` : 
             undefined,
-          matchConfidence: 100, // Full confidence as it's manually selected
+          matchConfidence: 100,
           manuallyApproved: true,
           isReplacement: true
         };
@@ -178,8 +170,7 @@ const ReviewStep = ({
     setReplaceSearchQuery("");
     toast.success("Song replaced successfully");
   };
-  
-  // Search Spotify for replacement
+
   const handleReplaceSearch = async () => {
     if (!replaceSearchQuery.trim()) {
       toast.info("Please enter a search query");
@@ -196,15 +187,14 @@ const ReviewStep = ({
       setSearchResults(results);
     }
   };
-  
-  // Close dialog and reset state
+
   const handleCloseDialog = () => {
     setShowDialog(false);
     setReplacingSongId(null);
     setReplaceSearchQuery("");
     setSearchResults([]);
   };
-  
+
   return (
     <motion.div
       key="review-matches"
@@ -232,7 +222,13 @@ const ReviewStep = ({
             </div>
           </div>
 
-          {/* Match quality summary */}
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-sm text-blue-700">
+              Tip: If the Add Song or Replace Song buttons aren't responding, press Enter after typing your search query.
+            </AlertDescription>
+          </Alert>
+
           <div className="bg-muted/40 rounded-lg p-4">
             <h3 className="text-sm font-medium mb-3 flex items-center gap-1">
               <SpotifyIcon className="h-4 w-4 text-green-500" />
@@ -291,7 +287,6 @@ const ReviewStep = ({
               </div>
             </div>
             
-            {/* Quality breakdown */}
             <div className="flex flex-wrap gap-4 text-xs">
               <TooltipProvider>
                 <Tooltip>
@@ -351,7 +346,6 @@ const ReviewStep = ({
             </div>
           </div>
           
-          {/* Filter by match quality */}
           <div className="flex items-center gap-2 text-xs">
             <Filter className="h-4 w-4" />
             <span>Filter by match quality:</span>
@@ -383,7 +377,6 @@ const ReviewStep = ({
             </div>
           </div>
           
-          {/* Add song from Spotify */}
           <div className="flex gap-2 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -401,7 +394,6 @@ const ReviewStep = ({
             </Button>
           </div>
 
-          {/* Song list */}
           <div className="max-h-[400px] overflow-y-auto pr-2 rounded-md">
             {displayedSongs.length > 0 ? (
               <ul className="space-y-3">
@@ -411,7 +403,6 @@ const ReviewStep = ({
                       song.manuallyApproved ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10' : 
                       'border-gray-100/10 bg-white/5 hover:bg-white/10'}`}>
                     <div className="flex items-start gap-3">
-                      {/* Left side - YouTube info */}
                       <div className="w-6 h-auto flex items-start mt-2">
                         <YoutubeIcon className="text-red-500 h-5 w-5" />
                       </div>
@@ -461,7 +452,6 @@ const ReviewStep = ({
                         </div>
                       </div>
                       
-                      {/* Match quality indicator in center */}
                       <div className="flex flex-col items-center justify-center px-1">
                         {song.isReplacement ? (
                           <div className="text-xs font-medium text-purple-500 flex items-center gap-1">
@@ -481,7 +471,6 @@ const ReviewStep = ({
                         )}
                       </div>
                       
-                      {/* Right side - Spotify info */}
                       <div className="w-6 h-auto flex items-start mt-2">
                         <SpotifyIcon className="text-green-500 h-5 w-5" />
                       </div>
@@ -548,7 +537,6 @@ const ReviewStep = ({
                         </div>
                       </div>
                       
-                      {/* Action buttons */}
                       <div className="flex gap-1">
                         {!song.manuallyApproved && !song.isReplacement && song.spotifyUri && (
                           <Button 
@@ -598,7 +586,6 @@ const ReviewStep = ({
         </div>
       </AnimatedCard>
       
-      {/* Dialog for searching and adding songs */}
       <Dialog open={showDialog} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -632,6 +619,11 @@ const ReviewStep = ({
               >
                 Search
               </Button>
+            </div>
+            
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Info className="h-3 w-3 text-blue-500" />
+              <span>Tip: Press Enter after typing to search</span>
             </div>
             
             <div className="max-h-[300px] overflow-y-auto">

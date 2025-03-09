@@ -53,7 +53,7 @@ const Index = () => {
     };
   }, []);
 
-  // Show login prompt if user is not at step 1 and not logged in
+  // Show login prompt only at the input URL step if not logged in
   const showLoginPrompt = currentStep === ConversionStep.INPUT_URL && !isUserLoggedIn;
 
   // Calculate the number of selected songs for CreationStep
@@ -62,10 +62,10 @@ const Index = () => {
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="space-y-8">
-        {/* Add Header component at the top */}
+        {/* Header component */}
         <Header />
         
-        {/* Show login prompt at the top if not logged in */}
+        {/* Only show login prompt at input URL step */}
         {showLoginPrompt && (
           <div className="mb-8">
             <SpotifyLoginPrompt />
