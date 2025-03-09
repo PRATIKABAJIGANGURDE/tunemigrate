@@ -55,6 +55,9 @@ const Index = () => {
   // Show login prompt if user is not at step 1 and not logged in
   const showLoginPrompt = currentStep === ConversionStep.INPUT_URL && !isUserLoggedIn;
 
+  // Calculate the number of selected songs for CreationStep
+  const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
+
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="space-y-8">
@@ -97,21 +100,27 @@ const Index = () => {
               songs={playlistData.songs}
               onContinue={handleCreatePlaylist}
               onBack={handleBackToNaming}
-              matchStats={matchingStats}
+              onUpdate={handleSongUpdate}
               onAddSpotifySong={handleAddSpotifySong}
               onAddSpotifyTrack={handleAddSpotifyTrack}
               onManualApprove={handleManualApprove}
+              loading={loading}
+              playlistTitle={playlistData.title}
             />
           )}
           
           {currentStep === ConversionStep.CREATE_PLAYLIST && (
-            <CreationStep />
+            <CreationStep 
+              playlistTitle={playlistData.title}
+              selectedSongsCount={selectedSongsCount}
+              currentProgress={conversionProgress}
+            />
           )}
           
           {currentStep === ConversionStep.COMPLETED && (
             <CompletedStep 
-              url={playlistUrl}
-              matchStats={matchingStats}
+              playlistTitle={playlistData.title}
+              matchingStats={matchingStats}
               onOpenSpotify={handleOpenSpotify}
               onStartOver={handleStartOver}
             />
