@@ -51,7 +51,7 @@ const Landing = () => {
         </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" asChild>
-            <Link onClick={handleSpotifyLogin} >Log in</Link>
+            <Link to="/login">Log in</Link>
           </Button>
           <Button asChild>
             <Link to="/app">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
