@@ -45,8 +45,10 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
       {/* Navigation */}
-      <nav className="container mx-auto py-6 flex items-center justify-between">
-        <Header />
+      <nav className="container mx-auto py-6 px-4 flex items-center justify-between">
+        <div className="flex-1">
+          <Header />
+        </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" asChild>
             <Link to="/login">Log in</Link>
@@ -249,7 +251,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
+          <div className="mb-4 md:mb-0 text-left">
             <Header />
           </div>
           <div className="text-center md:text-right text-sm text-muted-foreground">

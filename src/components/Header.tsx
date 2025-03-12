@@ -5,7 +5,7 @@ import { logoAnimation } from "@/lib/motionVariants";
 const Header = () => {
   return (
     <motion.header 
-      className="flex items-center justify-center w-full pt-10 pb-6"
+      className="flex items-center w-full pt-6 pb-4"
       initial="hidden"
       animate="visible"
       variants={logoAnimation}
