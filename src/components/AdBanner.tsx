@@ -25,20 +25,20 @@ const AdBanner = ({ position = "bottom" }: AdBannerProps) => {
                   Sponsored
                 </span>
               </div>
-              <h3 className="text-base font-medium mt-1">
-                Upgrade to TuneMigrate Pro for unlimited conversions
+              <h3 className="text-base font-medium mt-1 font-playfair">
+                Discover more music with TuneMigrate
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Get unlimited playlist migrations, priority support, and no ads
+                The fastest way to move your music between platforms
               </p>
             </div>
             <a 
-              href="https://tunemigrate.pro" 
+              href="https://example.com/music-discovery" 
               target="_blank" 
               rel="noopener noreferrer"
               className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium flex items-center gap-1 hover:bg-primary/90 transition-colors"
             >
-              Upgrade <ExternalLink className="h-4 w-4 ml-1" />
+              Learn More <ExternalLink className="h-4 w-4 ml-1" />
             </a>
           </div>
         </CardContent>

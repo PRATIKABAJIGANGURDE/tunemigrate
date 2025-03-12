@@ -31,7 +31,7 @@ const CompletedStep = ({
           </svg>
         </div>
         
-        <h2 className="text-2xl font-bold mb-2">Playlist Created!</h2>
+        <h2 className="text-2xl font-bold mb-2 font-playfair">Playlist Created!</h2>
         <p className="text-muted-foreground mb-2">
           Your playlist "{playlistTitle}" has been successfully created on Spotify!
         </p>
