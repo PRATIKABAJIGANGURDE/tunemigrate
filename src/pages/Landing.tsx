@@ -1,3 +1,4 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -17,7 +18,7 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, titl
     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
       {icon}
     </div>
-    <h3 className="text-lg font-semibold mb-2">{title}</h3>
+    <h3 className="text-lg font-playfair font-semibold mb-2">{title}</h3>
     <p className="text-muted-foreground">{description}</p>
   </motion.div>
 );
@@ -64,7 +65,7 @@ const Landing = () => {
           transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto"
         >
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 font-playfair">
             Transfer Your Music<br />
             <span className="text-gradient">YouTube to Spotify</span><br /> 
             In Seconds
@@ -94,7 +95,7 @@ const Landing = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-4xl font-bold text-primary mb-2">1M+</h3>
+              <h3 className="text-4xl font-bold text-primary mb-2 font-playfair">1M+</h3>
               <p className="text-muted-foreground">Playlists Converted</p>
             </motion.div>
             <motion.div 
@@ -104,7 +105,7 @@ const Landing = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-4xl font-bold text-primary mb-2">10M+</h3>
+              <h3 className="text-4xl font-bold text-primary mb-2 font-playfair">10M+</h3>
               <p className="text-muted-foreground">Songs Matched</p>
             </motion.div>
             <motion.div 
@@ -114,7 +115,7 @@ const Landing = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-4xl font-bold text-primary mb-2">98%</h3>
+              <h3 className="text-4xl font-bold text-primary mb-2 font-playfair">98%</h3>
               <p className="text-muted-foreground">Match Accuracy</p>
             </motion.div>
           </div>
@@ -124,7 +125,7 @@ const Landing = () => {
       {/* Features Section */}
       <section id="how-it-works" className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+          <h2 className="text-3xl font-bold mb-4 font-playfair">How It Works</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Our intelligent algorithm ensures the highest possible match accuracy from YouTube to Spotify
           </p>
@@ -153,7 +154,7 @@ const Landing = () => {
       <section className="bg-primary/5 border-y border-primary/10 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">What Our Users Say</h2>
+            <h2 className="text-3xl font-bold mb-4 font-playfair">What Our Users Say</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Join thousands of music lovers who've simplified their playlist migration
             </p>
@@ -177,7 +178,7 @@ const Landing = () => {
                   </div>
                   <p className="text-foreground mb-6 flex-grow">{testimonial.content}</p>
                   <div className="mt-auto">
-                    <h4 className="font-semibold">{testimonial.name}</h4>
+                    <h4 className="font-semibold font-playfair">{testimonial.name}</h4>
                     <p className="text-sm text-muted-foreground">{testimonial.title}</p>
                   </div>
                 </div>
@@ -187,57 +188,31 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Free Service Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Simple, Transparent Pricing</h2>
+          <h2 className="text-3xl font-bold mb-4 font-playfair">100% Free Service</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that fits your needs
+            TuneMigrate is completely free with no hidden costs
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <Card className="border border-border">
             <CardContent className="p-6">
-              <div className="mb-6">
-                <h3 className="text-xl font-bold mb-2">Free</h3>
-                <p className="text-3xl font-bold">$0<span className="text-base font-normal text-muted-foreground">/month</span></p>
-                <p className="text-muted-foreground mt-2">Perfect for occasional use</p>
+              <div className="mb-6 text-center">
+                <h3 className="text-xl font-bold mb-2 font-playfair">Free Forever</h3>
+                <p className="text-3xl font-bold font-playfair">$0<span className="text-base font-normal text-muted-foreground">/forever</span></p>
+                <p className="text-muted-foreground mt-2">Powered by unobtrusive ads</p>
               </div>
               
-              <ul className="space-y-3 mb-8">
-                {["3 playlist conversions per month", "Basic matching algorithm", "Standard support"].map((feature, i) => (
-                  <li key={i} className="flex items-start">
-                    <Check className="h-5 w-5 text-primary mr-2" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <Button className="w-full" variant="outline" asChild>
-                <Link to="/app">Get Started</Link>
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-2 border-primary bg-gradient-to-b from-primary/5 to-background">
-            <CardContent className="p-6 relative">
-              <div className="absolute -top-4 right-6 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-                POPULAR
-              </div>
-              <div className="mb-6">
-                <h3 className="text-xl font-bold mb-2">Pro</h3>
-                <p className="text-3xl font-bold">$4.99<span className="text-base font-normal text-muted-foreground">/month</span></p>
-                <p className="text-muted-foreground mt-2">For serious music enthusiasts</p>
-              </div>
-              
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 max-w-md mx-auto">
                 {[
                   "Unlimited playlist conversions", 
                   "Advanced AI matching", 
-                  "Priority support",
-                  "No advertisements",
-                  "Batch processing"
+                  "Quick support",
+                  "No account required",
+                  "Fast processing"
                 ].map((feature, i) => (
                   <li key={i} className="flex items-start">
                     <Check className="h-5 w-5 text-primary mr-2" />
@@ -246,11 +221,13 @@ const Landing = () => {
                 ))}
               </ul>
               
-              <Button className="w-full" asChild>
-                <a href="https://tunemigrate.pro" target="_blank" rel="noopener noreferrer">
-                  Upgrade to Pro
-                </a>
-              </Button>
+              <div className="text-center">
+                <Button className="w-60" asChild>
+                  <Link to="/app">
+                    Start Converting Now
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -259,7 +236,7 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="bg-primary text-primary-foreground py-16">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to Transfer Your Music?</h2>
+          <h2 className="text-3xl font-bold mb-6 font-playfair">Ready to Transfer Your Music?</h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
             Join thousands of users who have already simplified their music migration
           </p>

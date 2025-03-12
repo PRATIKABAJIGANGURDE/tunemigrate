@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { logoAnimation } from "@/lib/motionVariants";
 
@@ -13,7 +14,7 @@ const Header = () => {
         <div className="flex items-center">
           {/* YouTube Logo Container */}
           <motion.div 
-            className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
+            className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4 }}
@@ -35,7 +36,7 @@ const Header = () => {
 
           {/* Spotify Logo Container */}
           <motion.div 
-            className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
+            className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.2 }}
@@ -54,11 +55,11 @@ const Header = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight font-playfair">
             <span className="text-foreground">Tune</span>
             <span className="text-primary">Migrate</span>
           </h1>
-          <p className="text-xs text-muted-foreground -mt-1">YouTube to Spotify converter</p>
+          <p className="text-xs text-muted-foreground -mt-1 font-medium">YouTube to Spotify converter</p>
         </motion.div>
       </div>
     </motion.header>
