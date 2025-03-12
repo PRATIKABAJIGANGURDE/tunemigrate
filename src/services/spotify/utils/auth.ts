@@ -4,7 +4,7 @@
  */
 
 const CLIENT_ID = "e4de652cc02f42d6b3bdfdc24e155fc6";
-export const REDIRECT_URI = window.location.origin + "/callback";
+export const REDIRECT_URI = 'https://tunemigrate.vercel.app/callback';
 
 /**
  * Generate a random string for the state parameter
