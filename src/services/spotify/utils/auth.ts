@@ -1,9 +1,9 @@
-
 /**
  * Spotify Authentication Utilities
  */
 
-const CLIENT_ID = "e4de652cc02f42d6b3bdfdc24e155fc6";
+// Use environment variable for Client ID
+const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 export const REDIRECT_URI = 'https://tunemigrate.vercel.app/callback';
 
 /**
@@ -37,10 +37,16 @@ export const initiateSpotifyLogin = async (): Promise<void> => {
   const state = generateRandomString(16);
   const codeVerifier = generateRandomString(64);
   const codeChallenge = await generateCodeChallenge(codeVerifier);
-  
+
+  if (!CLIENT_ID) {
+    console.error("VITE_SPOTIFY_CLIENT_ID environment variable is not set!");
+    alert("Spotify Client ID is not configured. Please check the environment variables.");
+    return;
+  }
+
   // Store the code verifier in local storage for later use
   localStorage.setItem('spotify_code_verifier', codeVerifier);
-  
+
   // Build authorization URL
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
@@ -51,7 +57,7 @@ export const initiateSpotifyLogin = async (): Promise<void> => {
     code_challenge_method: 'S256',
     code_challenge: codeChallenge
   });
-  
+
   // Redirect to Spotify authorization page
   window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
 };
@@ -61,11 +67,15 @@ export const initiateSpotifyLogin = async (): Promise<void> => {
  */
 export const exchangeCodeForToken = async (code: string): Promise<{ access_token: string; refresh_token: string; expires_in: number }> => {
   const codeVerifier = localStorage.getItem('spotify_code_verifier');
-  
+
   if (!codeVerifier) {
     throw new Error("Code verifier not found");
   }
-  
+
+  if (!CLIENT_ID) {
+    throw new Error("VITE_SPOTIFY_CLIENT_ID environment variable is not set!");
+  }
+
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
@@ -79,11 +89,11 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
       code_verifier: codeVerifier
     })
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to exchange code for token: ${response.statusText}`);
   }
-  
+
   return response.json();
 };
 
@@ -93,11 +103,15 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
 export const refreshAccessToken = async (refreshToken?: string): Promise<string> => {
   // If no refresh token provided, try to get it from localStorage
   const token = refreshToken || localStorage.getItem('spotify_refresh_token');
-  
+
   if (!token) {
     throw new Error("No refresh token available");
   }
-  
+
+  if (!CLIENT_ID) {
+    throw new Error("VITE_SPOTIFY_CLIENT_ID environment variable is not set!");
+  }
+
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
@@ -109,25 +123,25 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
       refresh_token: token
     })
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to refresh token: ${response.statusText}`);
   }
-  
+
   const data = await response.json();
-  
+
   // Update the stored token
   localStorage.setItem('spotify_access_token', data.access_token);
-  
+
   // If we got a new refresh token, store that too
   if (data.refresh_token) {
     localStorage.setItem('spotify_refresh_token', data.refresh_token);
   }
-  
+
   // Update token expiry time
   const expiryTime = Date.now() + (data.expires_in * 1000);
   localStorage.setItem('spotify_token_expiry', expiryTime.toString());
-  
+
   return data.access_token;
 };
 
