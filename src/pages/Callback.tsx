@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { exchangeCodeForToken } from "@/services/spotifyService";
@@ -15,31 +14,40 @@ const Callback = () => {
       const error = urlParams.get("error");
 
       if (error) {
+        console.error("Spotify Authentication Error from URL:", error);
         setError("Authentication failed: " + error);
         return;
       }
 
       if (!code) {
+        console.error("Authorization code missing from callback URL");
         setError("No authorization code found");
         return;
       }
 
       try {
-        // Exchange the code for an access token
+        console.log("Exchanging code for token...");
         const tokenData = await exchangeCodeForToken(code);
-        
+
+        if (!tokenData || !tokenData.access_token || !tokenData.refresh_token) {
+          console.error("Token data is incomplete:", tokenData);
+          setError("Failed to retrieve tokens from Spotify");
+          return;
+        }
+
         // Store the tokens in localStorage
         localStorage.setItem("spotify_access_token", tokenData.access_token);
         localStorage.setItem("spotify_refresh_token", tokenData.refresh_token);
-        
+
         // Set expiry time (current time + expires_in seconds)
         const expiryTime = new Date().getTime() + (tokenData.expires_in * 1000);
         localStorage.setItem("spotify_token_expiry", expiryTime.toString());
-        
+
+        console.log("Tokens successfully stored. Redirecting to app...");
         // Redirect back to the main page
-        navigate("/");
+        navigate("/app");
       } catch (err) {
-        console.error("Error exchanging code for token:", err);
+        console.error("Error in exchangeCodeForToken:", err);
         setError("Failed to complete authentication");
       }
     };
@@ -53,7 +61,7 @@ const Callback = () => {
         <div className="text-center space-y-4">
           <h2 className="text-xl font-bold text-destructive">Authentication Error</h2>
           <p>{error}</p>
-          <button 
+          <button
             onClick={() => navigate("/")}
             className="text-primary font-medium hover:underline"
           >
