@@ -1,7 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { exchangeCodeForToken } from "@/services/spotifyService";
 import LoadingIndicator from "@/components/LoadingIndicator";
+import { toast } from "sonner";
 
 const Callback = () => {
   const navigate = useNavigate();
@@ -16,12 +18,14 @@ const Callback = () => {
       if (error) {
         console.error("Spotify Authentication Error from URL:", error);
         setError("Authentication failed: " + error);
+        toast.error("Authentication failed: " + error);
         return;
       }
 
       if (!code) {
         console.error("Authorization code missing from callback URL");
         setError("No authorization code found");
+        toast.error("No authorization code found");
         return;
       }
 
@@ -32,6 +36,7 @@ const Callback = () => {
         if (!tokenData || !tokenData.access_token || !tokenData.refresh_token) {
           console.error("Token data is incomplete:", tokenData);
           setError("Failed to retrieve tokens from Spotify");
+          toast.error("Failed to retrieve tokens from Spotify");
           return;
         }
 
@@ -44,11 +49,14 @@ const Callback = () => {
         localStorage.setItem("spotify_token_expiry", expiryTime.toString());
 
         console.log("Tokens successfully stored. Redirecting to app...");
-        // Redirect back to the main page
+        toast.success("Successfully connected to Spotify!");
+        
+        // Redirect to the app page
         navigate("/app");
       } catch (err) {
         console.error("Error in exchangeCodeForToken:", err);
         setError("Failed to complete authentication");
+        toast.error("Failed to complete authentication");
       }
     };
 
