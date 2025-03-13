@@ -5,7 +5,7 @@
 
 // Use environment variable for Client ID
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-export const REDIRECT_URI = 'http://localhost:8080/callback';
+export const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'https://tunemigrate.vercel.app/callback';
 
 /**
  * Generate a random string for the state parameter
