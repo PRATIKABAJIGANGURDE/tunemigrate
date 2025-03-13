@@ -11,6 +11,10 @@ const Callback = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Get the full URL to analyze
+      const currentUrl = window.location.href;
+      console.log("Current callback URL:", currentUrl);
+      
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
       const error = urlParams.get("error");
@@ -51,8 +55,16 @@ const Callback = () => {
         console.log("Tokens successfully stored. Redirecting to app...");
         toast.success("Successfully connected to Spotify!");
         
-        // Redirect to the app page
-        navigate("/app");
+        // Check if we're on the deployed site or development
+        const isProduction = window.location.hostname === "tunemigrate.vercel.app";
+        
+        if (isProduction) {
+          // In production, we need to redirect to the correct URL
+          window.location.href = "https://tunemigrate.vercel.app/app";
+        } else {
+          // In development or sandbox, use navigate
+          navigate("/app");
+        }
       } catch (err) {
         console.error("Error in exchangeCodeForToken:", err);
         setError("Failed to complete authentication");
@@ -70,7 +82,16 @@ const Callback = () => {
           <h2 className="text-xl font-bold text-destructive">Authentication Error</h2>
           <p>{error}</p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => {
+              // Check if we're on the deployed site or development
+              const isProduction = window.location.hostname === "tunemigrate.vercel.app";
+              
+              if (isProduction) {
+                window.location.href = "https://tunemigrate.vercel.app";
+              } else {
+                navigate("/");
+              }
+            }}
             className="text-primary font-medium hover:underline"
           >
             Return to Home
