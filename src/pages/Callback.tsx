@@ -8,6 +8,7 @@ import { toast } from "sonner";
 const Callback = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(true);
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -17,19 +18,31 @@ const Callback = () => {
       
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
+      const returnedState = urlParams.get("state");
       const error = urlParams.get("error");
+      const storedState = localStorage.getItem("spotify_auth_state");
 
       if (error) {
         console.error("Spotify Authentication Error from URL:", error);
         setError("Authentication failed: " + error);
+        setProcessing(false);
         toast.error("Authentication failed: " + error);
         return;
       }
 
       if (!code) {
         console.error("Authorization code missing from callback URL");
-        setError("No authorization code found");
+        setError("No authorization code found in the URL");
+        setProcessing(false);
         toast.error("No authorization code found");
+        return;
+      }
+
+      if (returnedState !== storedState) {
+        console.error("State mismatch. Possible CSRF attack.");
+        setError("Authentication state mismatch. Please try again.");
+        setProcessing(false);
+        toast.error("Security error. Please try again.");
         return;
       }
 
@@ -40,6 +53,7 @@ const Callback = () => {
         if (!tokenData || !tokenData.access_token || !tokenData.refresh_token) {
           console.error("Token data is incomplete:", tokenData);
           setError("Failed to retrieve tokens from Spotify");
+          setProcessing(false);
           toast.error("Failed to retrieve tokens from Spotify");
           return;
         }
@@ -55,19 +69,27 @@ const Callback = () => {
         console.log("Tokens successfully stored. Redirecting to app...");
         toast.success("Successfully connected to Spotify!");
         
-        // Check if we're on the deployed site or development
-        const isProduction = window.location.hostname === "tunemigrate.vercel.app";
+        // Clear state params after successful login
+        localStorage.removeItem("spotify_auth_state");
+        
+        // Define redirect URL
+        const redirectPath = "/app"; // Default redirect path
+        
+        // Check if we're on the deployed site
+        const isProduction = window.location.origin.includes("vercel") || 
+                             window.location.origin.includes("tunemigrate");
         
         if (isProduction) {
-          // In production, we need to redirect to the correct URL
-          window.location.href = "https://tunemigrate.vercel.app/app";
+          // In production, use window.location for a full page reload
+          window.location.href = `${window.location.origin}${redirectPath}`;
         } else {
-          // In development or sandbox, use navigate
-          navigate("/app");
+          // In development
+          navigate(redirectPath);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error in exchangeCodeForToken:", err);
-        setError("Failed to complete authentication");
+        setError(`Failed to complete authentication: ${err.message || 'Unknown error'}`);
+        setProcessing(false);
         toast.error("Failed to complete authentication");
       }
     };
@@ -76,32 +98,43 @@ const Callback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       {error ? (
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-bold text-destructive">Authentication Error</h2>
-          <p>{error}</p>
+        <div className="text-center space-y-4 max-w-md">
+          <h2 className="text-xl font-bold text-red-600">Authentication Error</h2>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            <p>{error}</p>
+          </div>
+          <p className="text-muted-foreground">
+            There was a problem authenticating with Spotify. Please try again.
+          </p>
           <button
             onClick={() => {
-              // Check if we're on the deployed site or development
-              const isProduction = window.location.hostname === "tunemigrate.vercel.app";
+              // Check if we're on the deployed site
+              const isProduction = window.location.origin.includes("vercel") || 
+                                  window.location.origin.includes("tunemigrate");
               
               if (isProduction) {
-                window.location.href = "https://tunemigrate.vercel.app";
+                window.location.href = window.location.origin;
               } else {
                 navigate("/");
               }
             }}
-            className="text-primary font-medium hover:underline"
+            className="text-primary font-medium hover:underline mt-2 inline-flex items-center"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
             Return to Home
           </button>
         </div>
       ) : (
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-6 max-w-md">
           <h2 className="text-xl font-bold">Connecting to Spotify</h2>
           <LoadingIndicator size="lg" />
-          <p className="text-muted-foreground">Please wait while we complete the authentication...</p>
+          <p className="text-muted-foreground">
+            {processing ? "Please wait while we complete the authentication..." : "Redirecting you back to the app..."}
+          </p>
         </div>
       )}
     </div>

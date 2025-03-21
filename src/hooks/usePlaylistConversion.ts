@@ -6,7 +6,8 @@ import {
   createSpotifyPlaylistFromSongs,
   getAccessToken,
   findSpotifyTracks,
-  searchSpotifySongs
+  searchSpotifySongs,
+  validateToken
 } from "@/services/spotifyService";
 
 export const usePlaylistConversion = () => {
@@ -61,10 +62,24 @@ export const usePlaylistConversion = () => {
       description
     });
     
-    if (!getAccessToken()) {
+    const accessToken = await getAccessToken();
+    
+    if (!accessToken) {
       toast.info("Please connect your Spotify account", {
         duration: 5000,
       });
+      return;
+    }
+    
+    try {
+      const isValid = await validateToken();
+      if (!isValid) {
+        toast.error("Your Spotify session has expired. Please log in again.");
+        return;
+      }
+    } catch (error) {
+      console.error("Error validating token:", error);
+      toast.error("There was a problem with your Spotify connection. Please log in again.");
       return;
     }
     
@@ -72,12 +87,6 @@ export const usePlaylistConversion = () => {
     setLoading(true);
     
     try {
-      const accessToken = getAccessToken();
-      
-      if (!accessToken) {
-        throw new Error("Spotify access token not found");
-      }
-      
       const selectedSongs = playlistData.songs.filter(song => song.selected);
       
       const songsWithMatches = await findSpotifyTracks(
@@ -110,18 +119,15 @@ export const usePlaylistConversion = () => {
   };
 
   const handleAddSpotifySong = async (query: string) => {
-    if (!getAccessToken()) {
+    const accessToken = await getAccessToken();
+    
+    if (!accessToken) {
       toast.error("You must be connected to Spotify to search songs");
       return;
     }
     
     try {
       setLoading(true);
-      const accessToken = getAccessToken();
-      
-      if (!accessToken) {
-        throw new Error("Not logged in to Spotify");
-      }
       
       const searchResults = await searchSpotifySongs(query, accessToken);
       
@@ -195,10 +201,15 @@ export const usePlaylistConversion = () => {
     setConversionProgress(0);
     
     try {
-      const accessToken = getAccessToken();
+      const accessToken = await getAccessToken();
       
       if (!accessToken) {
         throw new Error("Spotify access token not found");
+      }
+      
+      const isValid = await validateToken();
+      if (!isValid) {
+        throw new Error("Your Spotify session has expired. Please log in again.");
       }
       
       const selectedSongs = playlistData.songs.filter(song => 
@@ -227,11 +238,11 @@ export const usePlaylistConversion = () => {
       toast.success("Playlist created successfully!", {
         duration: 5000,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating playlist:", error);
       setLoading(false);
       setCurrentStep(ConversionStep.REVIEW_MATCHES);
-      toast.error("Failed to create playlist. Please try again.");
+      toast.error(`Failed to create playlist: ${error.message || 'Unknown error'}`);
     }
   };
 

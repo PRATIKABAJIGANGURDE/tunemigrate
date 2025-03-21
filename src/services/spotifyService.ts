@@ -10,7 +10,11 @@ export {
   refreshAccessToken,
   isLoggedIn,
   getAccessToken,
-  logout
+  logout,
+  validateToken,
+  isTokenExpired,
+  handleAuthError,
+  createAuthHeaders
 } from './spotify/utils/auth';
 
 export {
@@ -50,4 +54,3 @@ export {
   getEnhancedMatchDetails,
   analyzeSongDetailsWithAI
 } from './spotify/utils/aiMatcher';
-
