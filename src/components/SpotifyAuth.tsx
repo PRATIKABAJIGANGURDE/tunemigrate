@@ -13,12 +13,16 @@ interface SpotifyAuthProps {
 
 const SpotifyAuth = ({ onLogin, isLoggedIn: propIsLoggedIn }: SpotifyAuthProps) => {
   const [validatingToken, setValidatingToken] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'validating' | 'disconnected'>(
+    propIsLoggedIn ? 'connected' : 'disconnected'
+  );
 
   // Validate token on mount
   useEffect(() => {
     if (propIsLoggedIn) {
       const validate = async () => {
         setValidatingToken(true);
+        setConnectionStatus('validating');
         try {
           const isValid = await validateToken();
           if (!isValid) {
@@ -26,9 +30,13 @@ const SpotifyAuth = ({ onLogin, isLoggedIn: propIsLoggedIn }: SpotifyAuthProps) 
             logout();
             window.location.reload();
             toast.error("Your Spotify session has expired. Please log in again.");
+            setConnectionStatus('disconnected');
+          } else {
+            setConnectionStatus('connected');
           }
         } catch (error) {
           console.error("Token validation error:", error);
+          setConnectionStatus('disconnected');
         } finally {
           setValidatingToken(false);
         }
@@ -75,7 +83,7 @@ const SpotifyAuth = ({ onLogin, isLoggedIn: propIsLoggedIn }: SpotifyAuthProps) 
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            {validatingToken ? 'Verifying connection...' : 'Connected to Spotify'}
+            {connectionStatus === 'validating' ? 'Verifying connection...' : 'Connected to Spotify'}
           </div>
           
           <div className="flex gap-3 w-full">

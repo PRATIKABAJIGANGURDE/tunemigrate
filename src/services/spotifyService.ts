@@ -12,7 +12,9 @@ export {
   getAccessToken,
   logout,
   validateToken,
-  isTokenExpired
+  isTokenExpired,
+  handleAuthError,
+  createAuthHeaders
 } from './spotify/utils/auth';
 
 export {

@@ -46,6 +46,7 @@ export const initiateSpotifyLogin = async (): Promise<void> => {
 
   // Store the code verifier in local storage for later use
   localStorage.setItem('spotify_code_verifier', codeVerifier);
+  localStorage.setItem('spotify_auth_state', state);
 
   // Build authorization URL
   const params = new URLSearchParams({
@@ -78,18 +79,20 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
   }
 
   try {
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: codeVerifier
+    });
+
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: REDIRECT_URI,
-        code_verifier: codeVerifier
-      })
+      body: params
     });
 
     if (!response.ok) {
@@ -123,16 +126,18 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
   }
 
   try {
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      grant_type: 'refresh_token',
+      refresh_token: token
+    });
+
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: token
-      })
+      body: params
     });
 
     if (!response.ok) {
@@ -183,7 +188,8 @@ export const isTokenExpired = (): boolean => {
   const expiryTime = localStorage.getItem('spotify_token_expiry');
   if (!expiryTime) return true;
   
-  return Date.now() > parseInt(expiryTime, 10);
+  // Add a buffer of 5 minutes to ensure we refresh before expiry
+  return Date.now() > (parseInt(expiryTime, 10) - 300000);
 };
 
 /**
@@ -197,9 +203,11 @@ export const getAccessToken = async (): Promise<string | null> => {
   // Check if token is expired and refresh if needed
   if (isTokenExpired()) {
     try {
+      console.log("Token expired, refreshing...");
       return await refreshAccessToken();
     } catch (error) {
       console.error("Failed to refresh token:", error);
+      logout(); // Clear invalid tokens
       return null;
     }
   }
@@ -217,16 +225,58 @@ export const validateToken = async (): Promise<boolean> => {
     if (!token) return false;
     
     const response = await fetch('https://api.spotify.com/v1/me', {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
+    
+    if (response.status === 401 || response.status === 403) {
+      // Token might be invalid, try refreshing
+      try {
+        const newToken = await refreshAccessToken();
+        if (!newToken) return false;
+        
+        // Test with the new token
+        const retryResponse = await fetch('https://api.spotify.com/v1/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${newToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        return retryResponse.ok;
+      } catch (refreshError) {
+        console.error("Failed to refresh token during validation:", refreshError);
+        return false;
+      }
+    }
     
     return response.ok;
   } catch (error) {
     console.error("Token validation error:", error);
     return false;
   }
+};
+
+/**
+ * Clear auth token when there's a validation error
+ */
+export const handleAuthError = async (error: any): Promise<string | null> => {
+  console.error("Spotify API error:", error);
+  
+  if (error.message?.includes('401') || error.message?.includes('403')) {
+    try {
+      return await refreshAccessToken();
+    } catch (refreshError) {
+      logout();
+      return null;
+    }
+  }
+  
+  return null;
 };
 
 /**
@@ -237,4 +287,13 @@ export const logout = (): void => {
   localStorage.removeItem('spotify_refresh_token');
   localStorage.removeItem('spotify_token_expiry');
   localStorage.removeItem('spotify_code_verifier');
+  localStorage.removeItem('spotify_auth_state');
+};
+
+// Helper to create headers with authentication
+export const createAuthHeaders = (accessToken: string) => {
+  return {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  };
 };

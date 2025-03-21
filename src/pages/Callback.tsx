@@ -18,7 +18,9 @@ const Callback = () => {
       
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
+      const returnedState = urlParams.get("state");
       const error = urlParams.get("error");
+      const storedState = localStorage.getItem("spotify_auth_state");
 
       if (error) {
         console.error("Spotify Authentication Error from URL:", error);
@@ -33,6 +35,14 @@ const Callback = () => {
         setError("No authorization code found in the URL");
         setProcessing(false);
         toast.error("No authorization code found");
+        return;
+      }
+
+      if (returnedState !== storedState) {
+        console.error("State mismatch. Possible CSRF attack.");
+        setError("Authentication state mismatch. Please try again.");
+        setProcessing(false);
+        toast.error("Security error. Please try again.");
         return;
       }
 
@@ -59,15 +69,19 @@ const Callback = () => {
         console.log("Tokens successfully stored. Redirecting to app...");
         toast.success("Successfully connected to Spotify!");
         
+        // Clear state params after successful login
+        localStorage.removeItem("spotify_auth_state");
+        
         // Define redirect URL
         const redirectPath = "/app"; // Default redirect path
         
         // Check if we're on the deployed site
-        const isProduction = window.location.hostname === "tunemigrate.vercel.app";
+        const isProduction = window.location.origin.includes("vercel") || 
+                             window.location.origin.includes("tunemigrate");
         
         if (isProduction) {
-          // In production
-          window.location.href = `https://${window.location.hostname}${redirectPath}`;
+          // In production, use window.location for a full page reload
+          window.location.href = `${window.location.origin}${redirectPath}`;
         } else {
           // In development
           navigate(redirectPath);
@@ -97,10 +111,11 @@ const Callback = () => {
           <button
             onClick={() => {
               // Check if we're on the deployed site
-              const isProduction = window.location.hostname === "tunemigrate.vercel.app";
+              const isProduction = window.location.origin.includes("vercel") || 
+                                  window.location.origin.includes("tunemigrate");
               
               if (isProduction) {
-                window.location.href = `https://${window.location.hostname}`;
+                window.location.href = window.location.origin;
               } else {
                 navigate("/");
               }
