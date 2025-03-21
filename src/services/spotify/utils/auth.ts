@@ -1,11 +1,11 @@
-
 /**
  * Spotify Authentication Utilities
  */
+import { SPOTIFY_CONFIG } from '@/config/env';
 
 // Use environment variable for Client ID
-const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-export const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'https://tunemigrate.vercel.app/callback';
+const CLIENT_ID = SPOTIFY_CONFIG.clientId;
+export const REDIRECT_URI = SPOTIFY_CONFIG.redirectUri;
 
 /**
  * Generate a random string for the state parameter
@@ -40,7 +40,7 @@ export const initiateSpotifyLogin = async (): Promise<void> => {
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
   if (!CLIENT_ID) {
-    console.error("VITE_SPOTIFY_CLIENT_ID environment variable is not set!");
+    console.error("Spotify Client ID is not configured in environment variables!");
     throw new Error("Spotify Client ID is not configured. Please check the environment variables.");
   }
 
@@ -75,7 +75,7 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
   }
 
   if (!CLIENT_ID) {
-    throw new Error("VITE_SPOTIFY_CLIENT_ID environment variable is not set!");
+    throw new Error("Spotify Client ID is not configured in environment variables!");
   }
 
   try {
@@ -122,7 +122,7 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
   }
 
   if (!CLIENT_ID) {
-    throw new Error("VITE_SPOTIFY_CLIENT_ID environment variable is not set!");
+    throw new Error("Spotify Client ID is not configured in environment variables!");
   }
 
   try {
