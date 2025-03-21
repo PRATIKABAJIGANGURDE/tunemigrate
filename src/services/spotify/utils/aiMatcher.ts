@@ -1,10 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Song } from "@/types";
-import { AI_CONFIG } from "@/config/env";
 
 // Store API key in a place that would be secure in production
-// Initialize with environment variable if available
-let geminiApiKey: string | null = AI_CONFIG.geminiApiKey || null;
+// In a real app, this would come from environment variables or server-side
+let geminiApiKey: string | null = null;
 
 export const setGeminiApiKey = (key: string) => {
   geminiApiKey = key;

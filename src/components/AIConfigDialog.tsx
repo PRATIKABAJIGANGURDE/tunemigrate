@@ -15,10 +15,9 @@ import { Label } from "@/components/ui/label";
 import { setGeminiApiKey, getGeminiApiKey } from "@/services/spotifyService";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
-import { AI_CONFIG } from "@/config/env";
 
 const AIConfigDialog = () => {
-  const [apiKey, setApiKey] = useState(getGeminiApiKey() || AI_CONFIG.geminiApiKey || "");
+  const [apiKey, setApiKey] = useState(getGeminiApiKey() || "");
   const [open, setOpen] = useState(false);
 
   const handleSave = () => {
@@ -40,9 +39,9 @@ const AIConfigDialog = () => {
     }
   };
 
-  // Initialize API key from localStorage or environment variable on component mount
+  // Initialize API key from localStorage on component mount
   React.useEffect(() => {
-    const savedKey = localStorage.getItem("gemini_api_key") || AI_CONFIG.geminiApiKey;
+    const savedKey = localStorage.getItem("gemini_api_key");
     if (savedKey) {
       setApiKey(savedKey);
       setGeminiApiKey(savedKey);
