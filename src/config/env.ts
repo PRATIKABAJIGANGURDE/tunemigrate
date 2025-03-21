@@ -10,6 +10,7 @@ export const isProduction = import.meta.env.PROD || import.meta.env.VITE_ENV ===
 // Spotify configuration
 export const SPOTIFY_CONFIG = {
   clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID,
+  clientSecret: import.meta.env.VITE_SPOTIFY_CLIENT_SECRET,
   redirectUri: import.meta.env.VITE_REDIRECT_URI || 
     (isProduction 
       ? 'https://tunemigrate.vercel.app/callback'
@@ -21,10 +22,18 @@ export const AI_CONFIG = {
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || ''
 };
 
+// YouTube API
+export const YOUTUBE_CONFIG = {
+  apiKey: import.meta.env.VITE_YOUTUBE_API_KEY || ''
+};
+
 // Validate required environment variables
 const validateEnv = () => {
   const required = [
-    { name: 'VITE_SPOTIFY_CLIENT_ID', value: SPOTIFY_CONFIG.clientId }
+    { name: 'VITE_SPOTIFY_CLIENT_ID', value: SPOTIFY_CONFIG.clientId },
+    { name: 'VITE_SPOTIFY_CLIENT_SECRET', value: SPOTIFY_CONFIG.clientSecret },
+    { name: 'VITE_YOUTUBE_API_KEY', value: YOUTUBE_CONFIG.apiKey },
+    { name: 'VITE_GEMINI_API_KEY', value: AI_CONFIG.geminiApiKey }
   ];
 
   const missing = required.filter(item => !item.value);

@@ -1,10 +1,12 @@
+
 /**
  * Spotify Authentication Utilities
  */
 import { SPOTIFY_CONFIG } from '@/config/env';
 
-// Use environment variable for Client ID
+// Use environment variables
 const CLIENT_ID = SPOTIFY_CONFIG.clientId;
+const CLIENT_SECRET = SPOTIFY_CONFIG.clientSecret;
 export const REDIRECT_URI = SPOTIFY_CONFIG.redirectUri;
 
 /**
@@ -87,11 +89,19 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
       code_verifier: codeVerifier
     });
 
+    // If client secret is available, add basic authentication
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    
+    if (CLIENT_SECRET) {
+      const authString = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
+      headers['Authorization'] = `Basic ${authString}`;
+    }
+
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers,
       body: params
     });
 
@@ -132,11 +142,19 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
       refresh_token: token
     });
 
+    // If client secret is available, add basic authentication
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    
+    if (CLIENT_SECRET) {
+      const authString = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
+      headers['Authorization'] = `Basic ${authString}`;
+    }
+
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers,
       body: params
     });
 
