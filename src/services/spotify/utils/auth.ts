@@ -1,4 +1,3 @@
-
 /**
  * Spotify Authentication Utilities
  */
@@ -251,6 +250,8 @@ export const validateToken = async (): Promise<boolean> => {
     });
     
     if (response.status === 401 || response.status === 403) {
+      console.log(`Token validation failed with status: ${response.status}. Attempting to refresh token...`);
+      
       // Token might be invalid, try refreshing
       try {
         const newToken = await refreshAccessToken();
@@ -265,14 +266,28 @@ export const validateToken = async (): Promise<boolean> => {
           }
         });
         
-        return retryResponse.ok;
+        if (!retryResponse.ok) {
+          console.error(`Retry after token refresh also failed: ${retryResponse.status} ${retryResponse.statusText}`);
+          const responseText = await retryResponse.text();
+          console.error("Response body:", responseText);
+          return false;
+        }
+        
+        return true;
       } catch (refreshError) {
         console.error("Failed to refresh token during validation:", refreshError);
         return false;
       }
     }
     
-    return response.ok;
+    if (!response.ok) {
+      console.error(`Unexpected API response: ${response.status} ${response.statusText}`);
+      const responseText = await response.text();
+      console.error("Response body:", responseText);
+      return false;
+    }
+    
+    return true;
   } catch (error) {
     console.error("Token validation error:", error);
     return false;

@@ -1,4 +1,3 @@
-
 /**
  * Spotify Playlist Creation Services
  */
@@ -229,22 +228,31 @@ export const createSpotifyPlaylistFromSongs = async (
       }
     });
     
-    if (tokenValidationResponse.status === 401) {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        return createSpotifyPlaylistFromSongs(
-          newToken, 
-          playlistName, 
-          playlistDescription, 
-          songs, 
-          progressCallback
-        );
-      } else {
-        throw new Error("Your Spotify session has expired. Please log in again.");
+    if (tokenValidationResponse.status === 401 || tokenValidationResponse.status === 403) {
+      console.log(`Token validation failed with status: ${tokenValidationResponse.status}. Attempting to refresh token...`);
+      
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          return createSpotifyPlaylistFromSongs(
+            newToken, 
+            playlistName, 
+            playlistDescription, 
+            songs, 
+            progressCallback
+          );
+        } else {
+          throw new Error("Your Spotify session has expired. Please log in again.");
+        }
+      } catch (refreshError) {
+        console.error("Failed to refresh token:", refreshError);
+        throw new Error("Authentication failed. Please try logging in to Spotify again.");
       }
     }
     
     if (!tokenValidationResponse.ok) {
+      const errorText = await tokenValidationResponse.text();
+      console.error("Spotify API error:", errorText);
       throw new Error(`Failed to validate Spotify token: ${tokenValidationResponse.statusText}`);
     }
     

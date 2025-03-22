@@ -74,12 +74,16 @@ export const usePlaylistConversion = () => {
     try {
       const isValid = await validateToken();
       if (!isValid) {
-        toast.error("Your Spotify session has expired. Please log in again.");
+        toast.error("Your Spotify session has expired. Please log in again.", {
+          duration: 5000,
+        });
         return;
       }
     } catch (error) {
       console.error("Error validating token:", error);
-      toast.error("There was a problem with your Spotify connection. Please log in again.");
+      toast.error("There was a problem with your Spotify connection. Please log in again.", {
+        duration: 5000,
+      });
       return;
     }
     
@@ -110,11 +114,20 @@ export const usePlaylistConversion = () => {
         total: selectedSongs.length
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error finding matches:", error);
       setLoading(false);
       setCurrentStep(ConversionStep.NAME_PLAYLIST);
-      toast.error("Failed to find matches for songs. Please try again.");
+      
+      if (error.message?.includes("session expired") || error.message?.includes("log in again")) {
+        toast.error("Spotify authentication failed. Please reconnect your account.", {
+          duration: 5000,
+        });
+      } else {
+        toast.error(`Failed to find matches for songs: ${error.message || "Unknown error"}`, {
+          duration: 5000,
+        });
+      }
     }
   };
 
