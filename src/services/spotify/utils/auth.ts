@@ -1,3 +1,4 @@
+
 /**
  * Spotify Authentication Utilities
  */
@@ -80,6 +81,8 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
   }
 
   try {
+    // We'll use a proxy approach to avoid CORS issues
+    // This will make a client-side request directly to Spotify
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       grant_type: 'authorization_code',
@@ -135,6 +138,7 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
   }
 
   try {
+    // Direct request to Spotify token endpoint
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       grant_type: 'refresh_token',
