@@ -3,6 +3,7 @@
  * Spotify Authentication Utilities
  */
 import { SPOTIFY_CONFIG } from '@/config/env';
+import { toast } from 'sonner';
 
 // Use environment variables
 const CLIENT_ID = SPOTIFY_CONFIG.clientId;
@@ -50,7 +51,7 @@ export const initiateSpotifyLogin = async (): Promise<void> => {
   localStorage.setItem('spotify_code_verifier', codeVerifier);
   localStorage.setItem('spotify_auth_state', state);
 
-  // Build authorization URL
+  // Build authorization URL with force login parameter
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     response_type: 'code',
@@ -81,8 +82,7 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
   }
 
   try {
-    // We'll use a proxy approach to avoid CORS issues
-    // This will make a client-side request directly to Spotify
+    // We'll use a client side request with proper CORS headers
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       grant_type: 'authorization_code',
@@ -110,6 +110,16 @@ export const exchangeCodeForToken = async (code: string): Promise<{ access_token
     if (!response.ok) {
       const errorData = await response.text();
       console.error("Token exchange error:", errorData);
+      
+      // Handle specific error responses more gracefully
+      if (response.status === 400) {
+        toast.error("Couldn't connect to Spotify. Try logging in again.");
+      } else if (response.status === 401) {
+        toast.error("Authentication failed. Make sure your Spotify account is properly set up.");
+      } else {
+        toast.error("Failed to connect to Spotify. Please try again later.");
+      }
+      
       throw new Error(`Failed to exchange code for token: ${response.status} ${response.statusText}`);
     }
 
@@ -168,7 +178,12 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
       // If we got a 400 or 401, our refresh token might be invalid
       if (response.status === 400 || response.status === 401) {
         logout();
+        toast.error("Your Spotify session has expired. Please log in again.");
         throw new Error("Your session has expired. Please log in again.");
+      } else if (response.status === 403) {
+        logout();
+        toast.error("Your Spotify app may not be properly configured. Make sure your account is registered in the Spotify Developer Dashboard.");
+        throw new Error("Spotify app configuration issue. Please check your Developer Dashboard settings.");
       }
       
       throw new Error(`Failed to refresh token: ${response.status} ${response.statusText}`);
