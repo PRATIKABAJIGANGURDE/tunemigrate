@@ -1,9 +1,10 @@
+
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Music2, ArrowRightLeft, ChevronRight } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { ArrowRight, Music2, ArrowRightLeft, ChevronRight, Check } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
