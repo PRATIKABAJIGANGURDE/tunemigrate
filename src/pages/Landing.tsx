@@ -2,8 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Music, Lock, Award, Zap, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Music2, ArrowRightLeft, ChevronRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
@@ -41,6 +41,21 @@ const testimonials = [
 ];
 
 const Landing = () => {
+  const featuredTools = [
+    {
+      title: "Playlist Converter",
+      description: "Convert your playlists between different music streaming platforms seamlessly.",
+      icon: ArrowRightLeft,
+      link: "/app"
+    },
+    {
+      title: "Music Library Transfer",
+      description: "Transfer your entire music library across platforms with ease.",
+      icon: Music2,
+      link: "#"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
       {/* Navigation */}
@@ -120,31 +135,44 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="how-it-works" className="container mx-auto px-4 py-20">
+      {/* Tools Section */}
+      <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4 font-playfair">How It Works</h2>
+          <h2 className="text-3xl font-bold mb-4 font-playfair">Our Tools</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Our intelligent algorithm ensures the highest possible match accuracy from YouTube to Spotify
+            Discover our powerful tools designed to enhance your music experience
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <FeatureCard 
-            icon={<Music className="h-6 w-6 text-primary" />}
-            title="Intelligent Matching"
-            description="Our AI-powered matching algorithm finds the exact songs on Spotify, even with slight name variations."
-          />
-          <FeatureCard 
-            icon={<Zap className="h-6 w-6 text-primary" />}
-            title="Lightning Fast"
-            description="Convert entire playlists in seconds, not hours. No more manual searching and adding."
-          />
-          <FeatureCard 
-            icon={<Lock className="h-6 w-6 text-primary" />}
-            title="Secure Process"
-            description="Your data is processed securely. We only ask for the permissions we need to create playlists."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+          {featuredTools.map((tool, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ y: -5 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <Link to={tool.link}>
+                <Card className="p-6 h-full hover:shadow-md transition-all duration-300 cursor-pointer border-primary/10">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <tool.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-playfair font-semibold mb-2">{tool.title}</h3>
+                  <p className="text-muted-foreground">{tool.description}</p>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <Button size="lg" variant="outline" asChild>
+            <Link to="/tools">
+              View All Tools <ChevronRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </section>
 
