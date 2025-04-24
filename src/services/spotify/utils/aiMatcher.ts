@@ -23,11 +23,11 @@ export const extractArtistWithAI = async (title: string): Promise<string> => {
   }
 
   try {
-    // Updated to use the current API version (not v1beta)
+    // Updated to use the correct API version and model
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     
-    // Try using gemini-1.0-pro as a fallback if available (more generous quota)
-    const modelName = "gemini-1.0-pro";
+    // Use gemini-pro model which is available in the API
+    const modelName = "gemini-pro";
     const model = genAI.getGenerativeModel({ model: modelName });
     
     const prompt = `Extract the primary artist name from this song title. 
@@ -74,9 +74,9 @@ export const analyzeSongDetailsWithAI = async (title: string, artist: string): P
   }
 
   try {
-    // Try with a fallback model that has more generous quotas
+    // Use the correct model available in the API
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const modelName = "gemini-1.0-pro"; // Fallback to more stable model
+    const modelName = "gemini-pro"; // Use gemini-pro instead of gemini-1.0-pro
     const model = genAI.getGenerativeModel({ model: modelName });
     
     const prompt = `Analyze this song information and return a JSON object:

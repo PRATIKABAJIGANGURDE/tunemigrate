@@ -182,8 +182,8 @@ export const refreshAccessToken = async (refreshToken?: string): Promise<string>
         throw new Error("Your session has expired. Please log in again.");
       } else if (response.status === 403) {
         logout();
-        toast.error("Your Spotify app may not be properly configured. Make sure your account is registered in the Spotify Developer Dashboard.");
-        throw new Error("Spotify app configuration issue. Please check your Developer Dashboard settings.");
+        toast.error("Your account may not have access to this Spotify app. Make sure your Spotify account is registered in the Developer Dashboard and added to the app's users list.");
+        throw new Error("Forbidden: Make sure your account is registered in the Spotify Developer Dashboard.");
       }
       
       throw new Error(`Failed to refresh token: ${response.status} ${response.statusText}`);
@@ -289,6 +289,11 @@ export const validateToken = async (): Promise<boolean> => {
           console.error(`Retry after token refresh also failed: ${retryResponse.status} ${retryResponse.statusText}`);
           const responseText = await retryResponse.text();
           console.error("Response body:", responseText);
+          
+          if (retryResponse.status === 403) {
+            toast.error("Your account may not have access to this Spotify app. Make sure it's added to the app's allowed users in the Spotify Developer Dashboard.");
+          }
+          
           return false;
         }
         

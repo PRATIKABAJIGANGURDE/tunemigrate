@@ -5,7 +5,7 @@ import SpotifyIcon from "./icons/SpotifyIcon";
 import AIConfigDialog from "./AIConfigDialog";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ExternalLink } from "lucide-react";
 
 interface SpotifyAuthProps {
   onLogin: () => void;
@@ -96,11 +96,21 @@ const SpotifyAuth = ({ onLogin, isLoggedIn: propIsLoggedIn }: SpotifyAuthProps) 
       ) : (
         <div className="flex flex-col items-center space-y-3 w-full max-w-xs">
           {connectionStatus === 'error' ? (
-            <div className="bg-red-50 text-red-600 rounded-lg py-2 px-4 text-sm flex items-center w-full">
+            <div className="bg-red-50 text-red-600 rounded-lg py-2 px-4 text-sm flex items-start w-full">
               <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
               <div>
-                <p className="font-medium">Connection Error</p>
+                <p className="font-medium">Spotify Connection Error</p>
                 <p>{errorDetails || "Failed to validate Spotify connection"}</p>
+                <p className="mt-1 flex items-center gap-1">
+                  <a 
+                    href="https://developer.spotify.com/dashboard" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-red-700 underline flex items-center hover:text-red-800"
+                  >
+                    Check Spotify Dashboard <ExternalLink className="h-3 w-3 ml-0.5" />
+                  </a>
+                </p>
               </div>
             </div>
           ) : (
