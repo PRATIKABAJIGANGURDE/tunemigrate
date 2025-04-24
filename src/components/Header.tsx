@@ -6,14 +6,12 @@ import LogoWithServices from "./LogoWithServices";
 const Header = () => {
   return (
     <motion.header 
-      className="flex items-center w-full pt-6 pb-4"
+      className="flex items-center justify-center w-full pt-10 pb-6"
       initial="hidden"
       animate="visible"
       variants={logoAnimation}
     >
-      <div className="flex items-center gap-3 logo-animation">
-        <LogoWithServices />
-      </div>
+      <LogoWithServices />
     </motion.header>
   );
 };
