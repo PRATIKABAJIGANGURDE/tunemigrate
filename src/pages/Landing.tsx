@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -65,16 +64,16 @@ const Landing = () => {
           className="max-w-3xl mx-auto"
         >
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 font-playfair">
-            Transfer Your Music<br />
-            <span className="text-gradient">YouTube to Spotify</span><br /> 
-            In Seconds
+            Seamlessly Transfer<br />
+            <span className="text-gradient">Your Music Libraries</span><br /> 
+            Across Platforms
           </h1>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Seamlessly migrate your favorite playlists from YouTube to Spotify with intelligent track matching and zero hassle.
+            Effortlessly move your playlists between different music streaming services with just a few clicks.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link to="/app">Start Converting <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link to="/app">Start Migrating <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href="#how-it-works">How It Works <ChevronRight className="ml-1 h-4 w-4" /></a>
