@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Youtube, Minus, Spotify } from 'lucide-react';
+import { Youtube, Minus } from 'lucide-react';
+import SpotifyIcon from './icons/SpotifyIcon';
 
 const LogoWithServices = () => {
   return (
@@ -8,7 +9,7 @@ const LogoWithServices = () => {
       <div className="flex items-center bg-white p-2 rounded-xl shadow-sm">
         <Youtube className="h-5 w-5 text-[#FF0000]" />
         <Minus className="h-5 w-5 mx-1 text-primary" />
-        <Spotify className="h-5 w-5 text-[#1DB954]" />
+        <SpotifyIcon className="h-5 w-5 text-[#1DB954]" />
       </div>
       <div>
         <h1 className="text-2xl font-bold tracking-tight font-playfair">
