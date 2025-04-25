@@ -1,0 +1,64 @@
+
+import React from 'react';
+import { motion } from "framer-motion";
+
+const HomeLogoWithServices = () => {
+  return (
+    <div className="flex items-center gap-3 logo-animation">
+      <div className="flex items-center">
+        {/* App Window Logo for Home */}
+        <motion.div 
+          className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="2" className="text-primary"/>
+            <path d="M8 8h8M8 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </motion.div>
+
+        {/* Small Blue Connecting Line */}
+        <div className="relative mx-1">
+          <motion.div 
+            className="h-0.5 bg-primary rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: "1.5rem" }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          />
+        </div>
+
+        {/* Music Icon Container */}
+        <motion.div 
+          className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"/>
+            <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" className="text-primary"/>
+            <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="2" className="text-primary"/>
+          </svg>
+        </motion.div>
+      </div>
+
+      {/* Text Section with Animation */}
+      <motion.div 
+        className="ml-2"
+        initial={{ x: -10, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <h1 className="text-2xl font-bold tracking-tight">
+          <span className="text-foreground">Tune</span>
+          <span className="text-primary">Migrate</span>
+        </h1>
+        <p className="text-xs text-muted-foreground -mt-1">Your Music Journey, Simplified</p>
+      </motion.div>
+    </div>
+  );
+};
+
+export default HomeLogoWithServices;
