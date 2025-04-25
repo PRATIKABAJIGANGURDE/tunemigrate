@@ -12,11 +12,8 @@ const HomeLogoWithServices = () => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
-        >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="2" className="text-primary"/>
-            <path d="M8 8h8M8 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+        > 
+          <img src="public/favicon.png" width="28" height="28"></img>
         </motion.div>
 
         {/* Small Blue Connecting Line */}
