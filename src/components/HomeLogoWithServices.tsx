@@ -13,7 +13,7 @@ const HomeLogoWithServices = () => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
         > 
-          <img src="public/favicon.ico" width="28" height="28">
+          <img src="public/favicon.png" width="28" height="28">
         </motion.div>
 
         {/* Small Blue Connecting Line */}
