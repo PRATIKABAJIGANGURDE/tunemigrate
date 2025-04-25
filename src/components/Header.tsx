@@ -6,7 +6,7 @@ import LogoWithServices from "./LogoWithServices";
 const Header = () => {
   return (
     <motion.header 
-      className="flex items-center justify-center w-full pt-10 pb-6"
+      className="flex items-start justify-start w-full pt-10 pb-6 px-6"
       initial="hidden"
       animate="visible"
       variants={logoAnimation}

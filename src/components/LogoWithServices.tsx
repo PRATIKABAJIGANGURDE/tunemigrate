@@ -53,7 +53,7 @@ const LogoWithServices = () => {
           <span className="text-foreground">Tune</span>
           <span className="text-primary">Migrate</span>
         </h1>
-        <p className="text-xs text-muted-foreground -mt-1">YouTube to Spotify converter</p>
+        <p className="text-xs text-muted-foreground -mt-1">Your Music Journey, Simplified</p>
       </motion.div>
     </div>
   );
