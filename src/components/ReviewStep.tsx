@@ -44,7 +44,7 @@ const ReviewStep = ({
   const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
   const [replacingSongId, setReplacingSongId] = useState<string | null>(null);
   const [replaceSearchQuery, setReplaceSearchQuery] = useState("");
-  
+
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
 
   const replacingSong = useMemo(() => {
@@ -402,57 +402,59 @@ const ReviewStep = ({
                     ${song.isReplacement ? 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10' : 
                       song.manuallyApproved ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10' : 
                       'border-gray-100/10 bg-white/5 hover:bg-white/10'}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-auto flex items-start mt-2">
-                        <YoutubeIcon className="text-red-500 h-5 w-5" />
-                      </div>
-                      
-                      <div className="flex items-start gap-3 flex-1 min-w-0 pr-2 border-r border-gray-200/20">
-                        {song.thumbnail ? (
-                          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-                            <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded bg-secondary flex items-center justify-center flex-shrink-0">
-                            <MusicIcon className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
+                    <div className="flex flex-col md:flex-row items-start gap-3">
+                      <div className="flex items-start gap-3 w-full md:w-[45%] min-w-0">
+                        <div className="w-6 h-auto flex-shrink-0 mt-2">
+                          <YoutubeIcon className="text-red-500 h-5 w-5" />
+                        </div>
                         
-                        <div className="flex-1 min-w-0">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="font-medium text-sm leading-tight line-clamp-1 break-words hover:text-blue-400 cursor-help">
-                                {song.title}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-sm">
-                              <p className="text-sm">{song.title}</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        <div className="flex items-start gap-3 flex-1 min-w-0 pr-2 border-gray-200/20 md:border-r">
+                          {song.thumbnail ? (
+                            <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                              <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-secondary flex items-center justify-center flex-shrink-0">
+                              <MusicIcon className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
                           
-                          <div className="flex items-center">
+                          <div className="flex-1 min-w-0">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <p className="text-xs text-muted-foreground truncate hover:text-blue-400 cursor-help">
-                                  {song.artist}
+                                <p className="font-medium text-sm leading-tight truncate hover:text-blue-400 cursor-help max-w-[200px]">
+                                  {song.title}
                                 </p>
                               </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p className="text-xs">{song.artist}</p>
+                              <TooltipContent side="top" className="max-w-sm">
+                                <p className="text-sm">{song.title}</p>
                               </TooltipContent>
                             </Tooltip>
                             
-                            {song.duration && (
-                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
-                                <Clock className="h-3 w-3" />
-                                {song.duration}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <p className="text-xs text-muted-foreground truncate hover:text-blue-400 cursor-help max-w-[150px]">
+                                    {song.artist}
+                                  </p>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="text-xs">{song.artist}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              {song.duration && (
+                                <span className="flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
+                                  <Clock className="h-3 w-3" />
+                                  {song.duration}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col items-center justify-center px-1">
+
+                      <div className="hidden md:flex flex-col items-center justify-center px-1 min-w-[60px]">
                         {song.isReplacement ? (
                           <div className="text-xs font-medium text-purple-500 flex items-center gap-1">
                             <RefreshCw className="h-3 w-3" />
@@ -470,107 +472,109 @@ const ReviewStep = ({
                           </>
                         )}
                       </div>
-                      
-                      <div className="w-6 h-auto flex items-start mt-2">
-                        <SpotifyIcon className="text-green-500 h-5 w-5" />
-                      </div>
-                      
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        {song.spotifyThumbnail ? (
-                          <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-                            <img src={song.spotifyThumbnail} alt={song.spotifyTitle} className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                            <MusicIcon className="h-5 w-5 text-green-500" />
-                          </div>
-                        )}
+
+                      <div className="flex items-start gap-3 w-full md:w-[45%] min-w-0">
+                        <div className="w-6 h-auto flex-shrink-0 mt-2">
+                          <SpotifyIcon className="text-green-500 h-5 w-5" />
+                        </div>
                         
-                        <div className="flex-1 min-w-0">
-                          {song.spotifyTitle ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <p className="font-medium text-sm leading-tight line-clamp-1 break-words hover:text-green-400 cursor-help">
-                                  {song.spotifyTitle}
-                                </p>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-sm">
-                                <p className="text-sm">{song.spotifyTitle}</p>
-                              </TooltipContent>
-                            </Tooltip>
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {song.spotifyThumbnail ? (
+                            <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                              <img src={song.spotifyThumbnail} alt={song.spotifyTitle} className="w-full h-full object-cover" />
+                            </div>
                           ) : (
-                            <p className="font-medium text-sm text-muted-foreground italic">No match found</p>
+                            <div className="w-10 h-10 rounded bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                              <MusicIcon className="h-5 w-5 text-green-500" />
+                            </div>
                           )}
                           
-                          <div className="flex items-center">
-                            {song.spotifyArtist ? (
+                          <div className="flex-1 min-w-0">
+                            {song.spotifyTitle ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <p className="text-xs text-muted-foreground truncate hover:text-green-400 cursor-help">
-                                    {song.spotifyArtist}
+                                  <p className="font-medium text-sm leading-tight truncate hover:text-green-400 cursor-help max-w-[200px]">
+                                    {song.spotifyTitle}
                                   </p>
                                 </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p className="text-xs">{song.spotifyArtist}</p>
+                                <TooltipContent side="top" className="max-w-sm">
+                                  <p className="text-sm">{song.spotifyTitle}</p>
                                 </TooltipContent>
                               </Tooltip>
                             ) : (
-                              <p className="text-xs text-muted-foreground">
-                                <Button 
-                                  variant="link" 
-                                  size="sm" 
-                                  className="h-6 p-0 text-xs text-blue-400 hover:text-blue-300"
-                                  onClick={() => handleStartReplace(song.id)}
-                                >
-                                  Find replacement
-                                </Button>
-                              </p>
+                              <p className="font-medium text-sm text-muted-foreground italic">No match found</p>
                             )}
                             
-                            {song.spotifyDuration && (
-                              <span className="ml-1 flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
-                                <Clock className="h-3 w-3" />
-                                {song.spotifyDuration}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1">
+                              {song.spotifyArtist ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <p className="text-xs text-muted-foreground truncate hover:text-green-400 cursor-help max-w-[150px]">
+                                      {song.spotifyArtist}
+                                    </p>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p className="text-xs">{song.spotifyArtist}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">
+                                  <Button 
+                                    variant="link" 
+                                    size="sm" 
+                                    className="h-6 p-0 text-xs text-blue-400 hover:text-blue-300"
+                                    onClick={() => handleStartReplace(song.id)}
+                                  >
+                                    Find replacement
+                                  </Button>
+                                </p>
+                              )}
+                              
+                              {song.spotifyDuration && (
+                                <span className="flex items-center text-xs opacity-70 gap-1 whitespace-nowrap">
+                                  <Clock className="h-3 w-3" />
+                                  {song.spotifyDuration}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex gap-1">
-                        {!song.manuallyApproved && !song.isReplacement && song.spotifyUri && (
+
+                        <div className="flex gap-1">
+                          {!song.manuallyApproved && !song.isReplacement && song.spotifyUri && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                              onClick={() => handleManualApprove(song.id)}
+                              disabled={approvalLoading === song.id}
+                            >
+                              {approvalLoading === song.id ? (
+                                <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 animate-spin rounded-full"></div>
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          {!song.spotifyUri && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                              onClick={() => handleStartReplace(song.id)}
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-blue-500"
-                            onClick={() => handleManualApprove(song.id)}
-                            disabled={approvalLoading === song.id}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleRemoveSong(song.id)}
                           >
-                            {approvalLoading === song.id ? (
-                              <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 animate-spin rounded-full"></div>
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        )}
-                        {!song.spotifyUri && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-blue-500"
-                            onClick={() => handleStartReplace(song.id)}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleRemoveSong(song.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </div>
                       </div>
                     </div>
                   </li>
