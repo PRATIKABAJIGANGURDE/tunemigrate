@@ -21,28 +21,7 @@ const HomeLogoWithServices = () => {
         </motion.div>
 
         {/* Small Blue Connecting Line */}
-        <div className="relative mx-1">
-          <motion.div 
-            className="h-0.5 bg-primary rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: "1.5rem" }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          />
-        </div>
-
-        {/* Music Icon Container */}
-        <motion.div 
-          className="w-8 h-8 md:w-12 md:h-12 bg-gray-50 rounded-xl flex items-center justify-center shadow-md border border-gray-100 overflow-hidden"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <img 
-            src="public/favicon.png" 
-            alt="Music Icon" 
-            className="w-6 h-6 md:w-8 md:h-8 object-contain"
-          />
-        </motion.div>
+        
       </div>
 
       {/* Text Section with Animation */}
