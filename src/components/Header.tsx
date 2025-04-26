@@ -8,6 +8,7 @@ import { useLocation } from "react-router-dom";
 const Header = () => {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isToolsPage = location.pathname === "/tools";
 
   return (
     <motion.header 
@@ -16,10 +17,9 @@ const Header = () => {
       animate="visible"
       variants={logoAnimation}
     >
-      {isHomePage ? <HomeLogoWithServices /> : <LogoWithServices />}
+      {(isHomePage || isToolsPage) ? <HomeLogoWithServices /> : <LogoWithServices />}
     </motion.header>
   );
 };
 
 export default Header;
-
