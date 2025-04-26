@@ -14,7 +14,7 @@ const HomeLogoWithServices = () => {
           transition={{ duration: 0.4 }}
         > 
           <img 
-            src="public/favicon.png"
+            src="public/favicon.png" 
             alt="App Logo" 
             className="w-6 h-6 md:w-8 md:h-8 object-contain"
           />
