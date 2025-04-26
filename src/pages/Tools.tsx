@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-
+import Header from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { ArrowRight, Music2, ArrowRightLeft, PlayCircle } from "lucide-react";
