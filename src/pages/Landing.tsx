@@ -1,11 +1,11 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Music2, ArrowRightLeft, ChevronRight, Check } from "lucide-react";
+import { ArrowRight, Music2, ArrowRightLeft, ChevronRight, Check, Menu, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
   <motion.div 
@@ -42,6 +42,9 @@ const testimonials = [
 ];
 
 const Landing = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+  
   const featuredTools = [
     {
       title: "Playlist Converter",
@@ -60,15 +63,42 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
       {/* Navigation */}
-      <nav className="container mx-auto py-6 px-4 flex items-center justify-between">
+      <nav className="container mx-auto py-6 px-4 flex items-center justify-between relative z-50">
         <div className="flex-1">
           <Header />
         </div>
-        <div className="flex items-center gap-4">
-          <Button asChild>
-            <Link to="/app">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-        </div>
+        
+        {isMobile ? (
+          <>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="md:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            {isMobileMenuOpen && (
+              <motion.div 
+                className="absolute top-full right-0 left-0 bg-white shadow-lg rounded-b-lg py-4 px-6 flex flex-col gap-4"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <Button asChild className="w-full justify-center">
+                  <Link to="/app">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+              </motion.div>
+            )}
+          </>
+        ) : (
+          <div className="hidden md:flex items-center gap-4">
+            <Button asChild>
+              <Link to="/app">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
