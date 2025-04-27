@@ -1,89 +1,67 @@
 
 import React from "react";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Replace } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MatchQualityIndicatorProps {
-  confidence?: number;
-  showPercentage?: boolean;
-  size?: "sm" | "md" | "lg";
+  confidence: number;
+  alternativeTracks?: any[];
+  onReplace?: (track: any) => void;
 }
 
 const MatchQualityIndicator = ({ 
   confidence, 
-  showPercentage = true,
-  size = "md" 
+  alternativeTracks = [], 
+  onReplace
 }: MatchQualityIndicatorProps) => {
-  if (confidence === undefined) return null;
-  
-  const sizeClasses = {
-    sm: "h-3 w-3 text-xs",
-    md: "h-4 w-4 text-xs",
-    lg: "h-5 w-5 text-sm"
+  const getColor = () => {
+    if (confidence >= 85) return "text-green-500";
+    if (confidence >= 70) return "text-yellow-500";
+    return "text-red-500";
   };
-  
-  if (confidence >= 80) {
-    return (
+
+  return (
+    <div className="flex items-center gap-2">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
-              <CheckCircle2 className={`${sizeClasses[size]} text-green-500`} />
-              {showPercentage && <span className={`${sizeClasses[size]} text-green-500 font-medium`}>{confidence}%</span>}
-            </span>
+            <div className={`font-medium ${getColor()}`}>
+              {confidence}%
+            </div>
           </TooltipTrigger>
           <TooltipContent>
-            <div className="text-xs space-y-1 max-w-xs">
-              <p className="font-bold">Excellent Match: {confidence}%</p>
-              <p>High confidence that this is the correct song on Spotify</p>
-              <p className="text-green-400">Duration, title, and artist all match well</p>
-            </div>
+            <p>Match confidence score</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    );
-  } else if (confidence >= 60) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
-              <CheckCircle2 className={`${sizeClasses[size]} text-yellow-500`} />
-              {showPercentage && <span className={`${sizeClasses[size]} text-yellow-500 font-medium`}>{confidence}%</span>}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="text-xs space-y-1 max-w-xs">
-              <p className="font-bold">Good Match: {confidence}%</p>
-              <p>Reasonably confident this is the correct song</p>
-              <p className="text-yellow-400">Minor differences in details, but generally a good match</p>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  } else {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="flex items-center gap-1" title={`Match confidence: ${confidence}%`}>
-              <AlertTriangle className={`${sizeClasses[size]} text-orange-500`} />
-              {showPercentage && <span className={`${sizeClasses[size]} text-orange-500 font-medium`}>{confidence}%</span>}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="text-xs space-y-1 max-w-xs">
-              <p className="font-bold">Low Match: {confidence}%</p>
-              <p>This might not be the correct song on Spotify</p>
-              <p className="text-orange-400">Significant differences in duration or details</p>
-              <p>Consider verifying this match manually</p>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
+
+      {alternativeTracks && alternativeTracks.length > 0 && onReplace && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onReplace(alternativeTracks[0])}
+              >
+                <Replace className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Show alternative matches</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  );
 };
 
 export default MatchQualityIndicator;
