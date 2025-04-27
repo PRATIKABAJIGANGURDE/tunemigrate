@@ -22,6 +22,12 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!spotifyConnected) {
+      setError("Please connect your Spotify account first");
+      toast.error("Please connect to Spotify before proceeding");
+      return;
+    }
+    
     if (!url.trim()) {
       setError("Please enter a YouTube playlist URL");
       return;
@@ -64,55 +70,11 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold mb-2">Convert YouTube Playlist</h2>
           <p className="text-muted-foreground">
-            Paste a YouTube playlist URL to convert it to Spotify
+            Connect your Spotify account and paste a YouTube playlist URL to convert it
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="https://www.youtube.com/playlist?list=..."
-              value={url}
-              onChange={(e) => {
-                setUrl(e.target.value);
-                setError(null);
-              }}
-              className={`h-12 text-base px-4 transition-all duration-200 ${
-                error ? "border-destructive ring-destructive/20" : ""
-              }`}
-              disabled={loading}
-            />
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-destructive text-sm"
-              >
-                {error}
-              </motion.p>
-            )}
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full h-12 text-base font-medium"
-            disabled={loading}
-          >
-            {loading ? "Processing..." : "Convert Playlist"}
-          </Button>
-
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-muted"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-background px-2 text-xs text-muted-foreground">
-                OR
-              </span>
-            </div>
-          </div>
-
           {!spotifyConnected ? (
             <Button
               type="button"
@@ -131,6 +93,40 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
                 </svg>
                 Connected to Spotify
               </div>
+              
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="https://www.youtube.com/playlist?list=..."
+                  value={url}
+                  onChange={(e) => {
+                    setUrl(e.target.value);
+                    setError(null);
+                  }}
+                  className={`h-12 text-base px-4 transition-all duration-200 ${
+                    error ? "border-destructive ring-destructive/20" : ""
+                  }`}
+                  disabled={loading}
+                />
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-destructive text-sm"
+                  >
+                    {error}
+                  </motion.p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-medium"
+                disabled={loading}
+              >
+                {loading ? "Processing..." : "Convert Playlist"}
+              </Button>
+              
               <Button 
                 variant="outline" 
                 className="text-sm border-red-200 text-red-600 hover:bg-red-50"
