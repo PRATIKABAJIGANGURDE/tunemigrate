@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import AnimatedCard from "./AnimatedCard";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,12 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
   const [error, setError] = useState<string | null>(null);
   const spotifyConnected = isLoggedIn();
 
-  // Initialize Gemini API key
-  useState(() => {
+  // Initialize Gemini API key using useEffect hook
+  useEffect(() => {
     const apiKey = "AIzaSyAQZZw6P7EGCe5usjNfjfoilFOswghFnY0";
     setGeminiApiKey(apiKey);
     localStorage.setItem("gemini_api_key", apiKey);
-  });
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

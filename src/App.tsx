@@ -9,25 +9,29 @@ import Index from "./pages/Index";
 import Callback from "./pages/Callback";
 import NotFound from "./pages/NotFound";
 import Tools from "./pages/Tools";
+import React from "react";
 
-const queryClient = new QueryClient();
+const App = () => {
+  // Move the QueryClient initialization inside the component
+  const [queryClient] = React.useState(() => new QueryClient());
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/app" element={<Index />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/callback" element={<Callback />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/app" element={<Index />} />
+            <Route path="/tools" element={<Tools />} />
+            <Route path="/callback" element={<Callback />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
