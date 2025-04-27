@@ -1,4 +1,3 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Song } from "@/types";
 import { AI_CONFIG } from "@/config/env";
@@ -128,6 +127,80 @@ export const analyzeSongDetailsWithAI = async (title: string, artist: string): P
 };
 
 /**
+ * Advanced AI-powered song extraction for improved matching on Spotify
+ */
+export const extractSongDetailsWithAI = async (youtubeTitle: string): Promise<{
+  title: string;
+  artist: string;
+  features: string[];
+  isExplicit: boolean;
+  isRemix: boolean;
+  remixer?: string;
+  confidence: number;
+}> => {
+  if (!geminiApiKey) {
+    return {
+      title: cleanSongTitle(youtubeTitle),
+      artist: fallbackArtistExtraction(youtubeTitle),
+      features: [],
+      isExplicit: false,
+      isRemix: youtubeTitle.toLowerCase().includes('remix'),
+      confidence: 50
+    };
+  }
+  
+  try {
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    const prompt = `Extract structured song information from this YouTube video title.
+    
+    YouTube Title: "${youtubeTitle}"
+    
+    Return a JSON object with these fields:
+    - title: string (the clean song title without extra information)
+    - artist: string (primary artist name)
+    - features: string[] (list of featured artists if any)
+    - isExplicit: boolean (true if explicit version)
+    - isRemix: boolean (true if this is a remix)
+    - remixer: string (if it's a remix, who remixed it)
+    - confidence: number (1-100, how confident you are in this extraction)
+    
+    Only return valid JSON. Be as accurate as possible.`;
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const analysisText = response.text().trim();
+    
+    try {
+      const analysis = JSON.parse(analysisText);
+      console.log("AI extracted song details:", analysis);
+      return analysis;
+    } catch (e) {
+      console.error("Failed to parse AI song extraction:", analysisText);
+      return {
+        title: cleanSongTitle(youtubeTitle),
+        artist: fallbackArtistExtraction(youtubeTitle),
+        features: [],
+        isExplicit: false,
+        isRemix: youtubeTitle.toLowerCase().includes('remix'),
+        confidence: 45
+      };
+    }
+  } catch (error) {
+    console.error("AI Song Extraction Error:", error);
+    return {
+      title: cleanSongTitle(youtubeTitle),
+      artist: fallbackArtistExtraction(youtubeTitle),
+      features: [],
+      isExplicit: false,
+      isRemix: youtubeTitle.toLowerCase().includes('remix'),
+      confidence: 40
+    };
+  }
+};
+
+/**
  * Fallback method to extract artist when AI is unavailable
  */
 export const fallbackArtistExtraction = (title: string): string => {
@@ -163,6 +236,42 @@ export const detectSpecialVersion = (title: string): {
     isCover: /\bcover\b|\btribute\b|\bversion by\b|\bperformed by\b/i.test(lowerTitle),
     isAcoustic: /\bacoustic\b|\bstripped\b|\bpiano\b|\bunplugged\b/i.test(lowerTitle)
   };
+};
+
+/**
+ * Clean song title for better matching
+ */
+export const cleanSongTitle = (title: string): string => {
+  // First, attempt to extract the title from common patterns
+  let cleanedTitle = title;
+  
+  // Remove "Artist - " at the beginning if present
+  const dashPattern = /^(.+?)\s*-\s*(.+)$/;
+  const dashMatch = title.match(dashPattern);
+  if (dashMatch) {
+    cleanedTitle = dashMatch[2].trim();
+  }
+  
+  // Remove common YouTube suffixes and unnecessary information
+  return cleanedTitle
+    .replace(/\(Official Video\)/gi, '')
+    .replace(/\(Official Music Video\)/gi, '')
+    .replace(/\(Official Audio\)/gi, '')
+    .replace(/\(Official Lyric Video\)/gi, '')
+    .replace(/\(Lyrics\)/gi, '')
+    .replace(/\(Lyric Video\)/gi, '')
+    .replace(/\[Official Video\]/gi, '')
+    .replace(/\[Official Music Video\]/gi, '')
+    .replace(/\[Official Audio\]/gi, '')
+    .replace(/\[Official Lyric Video\]/gi, '')
+    .replace(/\[Lyrics\]/gi, '')
+    .replace(/\[Lyric Video\]/gi, '')
+    .replace(/\|\s*[A-Za-z0-9\s]+\s*Official/gi, '')
+    .replace(/VEVO/gi, '')
+    .replace(/HD|HQ|4K|8K|1080p|720p/gi, '')
+    .replace(/\(\d{4}\)|\[\d{4}\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 /**

@@ -1,3 +1,4 @@
+
 /**
  * Spotify Matching Services - Search and Match Tracks
  */
@@ -15,7 +16,8 @@ import {
 import { 
   getMatchDetails,
   getEnhancedMatchDetails,
-  analyzeSongDetailsWithAI
+  analyzeSongDetailsWithAI,
+  extractSongDetailsWithAI
 } from "./utils/aiMatcher";
 import { refreshAccessToken } from "./utils/auth";
 
@@ -24,25 +26,47 @@ import { refreshAccessToken } from "./utils/auth";
  */
 export const searchTrack = async (song: Song, accessToken: string): Promise<any | null> => {
   try {
-    // First try analyzing the song with AI if we have an API key
+    // First try analyzing the song with AI
     let cleanedTitle = cleanSongTitle(song.title);
     let artist = extractArtistName(song.artist);
     
-    // Try AI-enhanced analysis if possible
+    // Try AI-enhanced analysis
     try {
-      const analysis = await analyzeSongDetailsWithAI(song.title, song.artist);
+      // Use our new specialized AI extraction function
+      const songDetails = await extractSongDetailsWithAI(song.title);
       
-      if (analysis && analysis.confidence > 75) {
+      if (songDetails && songDetails.confidence > 60) {
         // Use AI-extracted details if confidence is high
-        cleanedTitle = analysis.extractedTitle;
-        artist = analysis.extractedArtist;
+        cleanedTitle = songDetails.title;
+        artist = songDetails.artist;
         
         console.log("Using AI-enhanced song details:", {
           originalTitle: song.title,
           cleanedTitle,
           originalArtist: song.artist,
-          artist
+          artist,
+          features: songDetails.features,
+          isRemix: songDetails.isRemix
         });
+        
+        // First search attempt with exact extracted information
+        const exactSearchQuery = `${cleanedTitle} ${artist}`;
+        let tracks = await searchSpotifySongs(exactSearchQuery, accessToken);
+        
+        if (tracks && tracks.length > 0) {
+          const bestMatch = await findBestMatch(song, tracks, songDetails);
+          if (bestMatch && bestMatch.confidence > 75) {
+            return bestMatch;
+          }
+        }
+      } else {
+        // Fallback to basic analysis
+        const analysis = await analyzeSongDetailsWithAI(song.title, song.artist);
+        
+        if (analysis && analysis.confidence > 70) {
+          cleanedTitle = analysis.extractedTitle;
+          artist = analysis.extractedArtist;
+        }
       }
     } catch (error) {
       console.log("AI analysis unavailable, using basic cleaning:", error);
@@ -151,10 +175,41 @@ const searchWithTitleOnly = async (title: string, accessToken: string): Promise<
 /**
  * Calculate match confidence score with AI enhancements
  */
-export const calculateMatchConfidence = async (song: Song, track: any): Promise<number> => {
+export const calculateMatchConfidence = async (song: Song, track: any, songDetails?: any): Promise<number> => {
   try {
-    // Use the enhanced AI matching algorithm
+    // Use the enhanced AI matching algorithm with additional song details if available
     const matchDetails = await getEnhancedMatchDetails(song, track);
+    
+    // Boost confidence if we have AI-extracted details that match
+    if (songDetails) {
+      let boostScore = 0;
+      
+      // Check if track artist matches our AI-extracted artist
+      const spotifyArtists = track.artists.map((a: any) => a.name.toLowerCase());
+      if (spotifyArtists.some(a => a.includes(songDetails.artist.toLowerCase()) || 
+                                songDetails.artist.toLowerCase().includes(a))) {
+        boostScore += 10;
+      }
+      
+      // Check if features match
+      if (songDetails.features && songDetails.features.length > 0) {
+        for (const feature of songDetails.features) {
+          if (spotifyArtists.some(a => a.includes(feature.toLowerCase()) || 
+                                  feature.toLowerCase().includes(a))) {
+            boostScore += 5;
+          }
+        }
+      }
+      
+      // Match remix status
+      if (songDetails.isRemix === (track.name.toLowerCase().includes('remix'))) {
+        boostScore += 8;
+      }
+      
+      // Apply the boost, ensuring we don't exceed 100%
+      return Math.min(100, matchDetails.enhancedScore + boostScore);
+    }
+    
     return matchDetails.enhancedScore;
   } catch (error) {
     console.error("Error with enhanced matching, falling back to basic:", error);
@@ -186,12 +241,12 @@ export const calculateMatchConfidence = async (song: Song, track: any): Promise<
 /**
  * Find the best matching track from a list of tracks
  */
-export const findBestMatch = async (song: Song, tracks: any[]): Promise<any | null> => {
+export const findBestMatch = async (song: Song, tracks: any[], songDetails?: any): Promise<any | null> => {
   let bestMatch = null;
   let bestConfidence = 0;
   
   for (const track of tracks) {
-    const confidence = await calculateMatchConfidence(song, track);
+    const confidence = await calculateMatchConfidence(song, track, songDetails);
     
     if (confidence > bestConfidence) {
       bestConfidence = confidence;
