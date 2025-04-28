@@ -42,6 +42,88 @@ export const calculateStringSimilarity = (str1: string, str2: string): number =>
 };
 
 /**
+ * Calculate Levenshtein similarity (edit distance based)
+ * Returns a value between 0-1 where 1 is exact match
+ */
+export const calculateLevenshteinSimilarity = (str1: string, str2: string): number => {
+  // Normalize strings
+  const a = str1.toLowerCase().trim();
+  const b = str2.toLowerCase().trim();
+  
+  // Early return for exact match
+  if (a === b) return 1.0;
+  
+  // If either string is empty, similarity is 0
+  if (a.length === 0 || b.length === 0) return 0;
+  
+  // Create matrix
+  const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+  
+  // Initialize first row and column
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i][0] = i;
+  }
+  for (let j = 0; j <= b.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  // Fill the matrix
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1, // deletion
+        matrix[i][j - 1] + 1, // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+  
+  // The last value in the matrix is the Levenshtein distance
+  const distance = matrix[a.length][b.length];
+  
+  // Convert to similarity score (0-1)
+  const maxLength = Math.max(a.length, b.length);
+  return maxLength > 0 ? 1 - distance / maxLength : 1;
+};
+
+/**
+ * Compare artists flexibly considering multiple artists and features
+ */
+export const compareArtistsFlexibly = (artist1: string, artist2: string): number => {
+  // Normalize strings
+  const a = artist1.toLowerCase().trim();
+  const b = artist2.toLowerCase().trim();
+  
+  // Early return for exact match
+  if (a === b) return 1.0;
+  
+  // Split artists by common separators
+  const artistsA = a.split(/[,&+x\/]/).map(s => s.trim()).filter(Boolean);
+  const artistsB = b.split(/[,&+x\/]/).map(s => s.trim()).filter(Boolean);
+  
+  // Try to find matches between artists
+  let matchScore = 0;
+  
+  // Check each artist from set A against set B
+  for (const artistA of artistsA) {
+    // Find best matching artist in set B
+    let bestMatchScore = 0;
+    
+    for (const artistB of artistsB) {
+      // Use Levenshtein for more accurate artist name matching
+      const similarity = calculateLevenshteinSimilarity(artistA, artistB);
+      bestMatchScore = Math.max(bestMatchScore, similarity);
+    }
+    
+    matchScore += bestMatchScore;
+  }
+  
+  // Normalize the score based on number of artists in set A
+  return artistsA.length > 0 ? matchScore / artistsA.length : 0;
+};
+
+/**
  * Convert duration string (like "3:45") to seconds
  */
 export const durationToSeconds = (duration?: string): number => {

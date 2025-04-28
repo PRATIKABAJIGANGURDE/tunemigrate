@@ -1,3 +1,4 @@
+
 /**
  * Spotify Matching Services - Search and Match Tracks
  */
@@ -114,14 +115,14 @@ const findBestMatchPrioritizingTitle = async (song: Song, tracks: any[], songDet
     score += artistSimilarity * 0.3;
     
     // Duration and other factors (20%)
-    const matchDetails = await getEnhancedMatchDetails(song, track, songDetails);
+    const matchDetails = await getEnhancedMatchDetails(song, track);
     score += matchDetails.enhancedScore * 0.2;
     
     if (score > bestScore) {
       bestScore = score;
       bestMatch = {
         ...track,
-        confidence: Math.round(score)
+        confidence: Math.round(score * 100)
       };
     }
   }
