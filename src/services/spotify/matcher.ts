@@ -7,9 +7,7 @@ import { Song } from "@/types";
 import { 
   calculateStringSimilarity, 
   compareDurations,
-  compareReleaseDates,
-  calculateLevenshteinSimilarity,
-  compareArtistsFlexibly
+  compareReleaseDates
 } from "./utils/similarity";
 import { 
   cleanSongTitle,
@@ -24,7 +22,7 @@ import {
 import { refreshAccessToken } from "./utils/auth";
 
 /**
- * Search for a track on Spotify with AI enhancement and prioritized song name matching
+ * Search for a track on Spotify with AI enhancement
  */
 export const searchTrack = async (song: Song, accessToken: string): Promise<any | null> => {
   try {
@@ -34,9 +32,11 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<any 
     
     // Try AI-enhanced analysis
     try {
+      // Use our new specialized AI extraction function
       const songDetails = await extractSongDetailsWithAI(song.title);
       
       if (songDetails && songDetails.confidence > 60) {
+        // Use AI-extracted details if confidence is high
         cleanedTitle = songDetails.title;
         artist = songDetails.artist;
         
@@ -49,85 +49,63 @@ export const searchTrack = async (song: Song, accessToken: string): Promise<any 
           isRemix: songDetails.isRemix
         });
         
-        // First search with just the title to prioritize name matches
-        let tracks = await searchWithTitleOnly(cleanedTitle, accessToken);
+        // First search attempt with exact extracted information
+        const exactSearchQuery = `${cleanedTitle} ${artist}`;
+        let tracks = await searchSpotifySongs(exactSearchQuery, accessToken);
         
         if (tracks && tracks.length > 0) {
-          // Find the best match considering title similarity more heavily
-          const bestMatch = await findBestMatchPrioritizingTitle(song, tracks, songDetails);
-          if (bestMatch && bestMatch.confidence > 70) {
-            return {
-              ...bestMatch,
-              alternativeTracks: tracks.filter(t => t.id !== bestMatch.id).slice(0, 3)
-            };
+          const bestMatch = await findBestMatch(song, tracks, songDetails);
+          if (bestMatch && bestMatch.confidence > 75) {
+            return bestMatch;
           }
         }
+      } else {
+        // Fallback to basic analysis
+        const analysis = await analyzeSongDetailsWithAI(song.title, song.artist);
         
-        // If no good match found, try with both title and artist
-        tracks = await searchWithTitleAndArtist(cleanedTitle, artist, accessToken);
-        if (tracks && tracks.length > 0) {
-          const bestMatch = await findBestMatchPrioritizingTitle(song, tracks, songDetails);
-          return {
-            ...bestMatch,
-            alternativeTracks: tracks.filter(t => t.id !== bestMatch.id).slice(0, 3)
-          };
+        if (analysis && analysis.confidence > 70) {
+          cleanedTitle = analysis.extractedTitle;
+          artist = analysis.extractedArtist;
         }
       }
     } catch (error) {
       console.log("AI analysis unavailable, using basic cleaning:", error);
+      // Continue with basic cleaned title and artist
     }
     
-    // Fallback to basic title search
-    const tracks = await searchWithTitleOnly(cleanedTitle, accessToken);
+    // First try: search with both title and artist
+    let tracks = await searchWithTitleAndArtist(cleanedTitle, artist, accessToken);
+    
+    // If no results, try searching with just the title
+    if (!tracks || tracks.length === 0) {
+      tracks = await searchWithTitleOnly(cleanedTitle, accessToken);
+    }
+    
     if (!tracks || tracks.length === 0) {
       return null;
     }
     
-    const bestMatch = await findBestMatchPrioritizingTitle(song, tracks);
-    return {
-      ...bestMatch,
-      alternativeTracks: tracks.filter(t => t.id !== bestMatch.id).slice(0, 3)
-    };
-  } catch (error) {
-    console.error("Error searching track:", error);
+    // Find the best match with AI-enhanced algorithms
+    const bestMatch = await findBestMatch(song, tracks);
+    
+    return bestMatch;
+  } catch (error: any) {
+    console.error("Error searching track:", error.message);
+    
+    // Handle token expiration
+    if (error.message?.includes("401") || error.message?.includes("expired")) {
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          return searchTrack(song, newToken);
+        }
+      } catch (refreshError) {
+        console.error("Failed to refresh token:", refreshError);
+      }
+    }
+    
     return null;
   }
-};
-
-/**
- * Find best match with higher weight on title similarity
- */
-const findBestMatchPrioritizingTitle = async (song: Song, tracks: any[], songDetails?: any): Promise<any | null> => {
-  let bestMatch = null;
-  let bestScore = 0;
-  
-  for (const track of tracks) {
-    const titleSimilarity = calculateLevenshteinSimilarity(
-      cleanSongTitle(song.title).toLowerCase(),
-      track.name.toLowerCase()
-    );
-    
-    // Title similarity has more weight now (50%)
-    let score = titleSimilarity * 0.5;
-    
-    // Artist similarity (30%)
-    const artistSimilarity = compareArtistsFlexibly(song.artist, track.artists[0].name);
-    score += artistSimilarity * 0.3;
-    
-    // Duration and other factors (20%)
-    const matchDetails = await getEnhancedMatchDetails(song, track);
-    score += matchDetails.enhancedScore * 0.2;
-    
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = {
-        ...track,
-        confidence: Math.round(score * 100)
-      };
-    }
-  }
-  
-  return bestMatch;
 };
 
 /**
