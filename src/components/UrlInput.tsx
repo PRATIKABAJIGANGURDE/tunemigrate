@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { extractPlaylistId } from "@/services/youtubeService";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { initiateSpotifyLogin, isLoggedIn, logout, setGeminiApiKey } from "@/services/spotifyService";
-import AIConfigDialog from "./AIConfigDialog";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -141,7 +140,7 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
                 Connected to Spotify
               </div>
               
-              <div className="flex justify-between items-center">
+              <div className="flex justify-center items-center">
                 <Button 
                   variant="outline" 
                   className="text-sm border-red-200 text-red-600 hover:bg-red-50"
@@ -149,8 +148,6 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
                 >
                   Disconnect from Spotify
                 </Button>
-                
-                <AIConfigDialog />
               </div>
             </div>
           )}
@@ -167,3 +164,4 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
 };
 
 export default UrlInput;
+
