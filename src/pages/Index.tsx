@@ -32,7 +32,8 @@ const Index = () => {
     handleOpenSpotify,
     handleAddSpotifySong,
     handleAddSpotifyTrack,
-    handleManualApprove
+    handleManualApprove,
+    handleAIMatchAll
   } = usePlaylistConversion();
 
   const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(isLoggedIn());
@@ -105,6 +106,7 @@ const Index = () => {
               onAddSpotifySong={handleAddSpotifySong}
               onAddSpotifyTrack={handleAddSpotifyTrack}
               onManualApprove={handleManualApprove}
+              onAIMatchAll={handleAIMatchAll}
               loading={loading}
               playlistTitle={playlistData.title}
             />

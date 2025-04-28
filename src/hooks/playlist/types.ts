@@ -25,6 +25,7 @@ export interface UsePlaylistMatchingReturn {
   handleAddSpotifySong: (query: string) => Promise<any[] | null>;
   handleAddSpotifyTrack: (track: any) => void;
   handleManualApprove: (songId: string) => Promise<void>;
+  handleAIMatchAll: () => Promise<void>;
 }
 
 export interface UsePlaylistCreationReturn {

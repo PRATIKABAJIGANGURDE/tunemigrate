@@ -23,6 +23,7 @@ interface ReviewStepProps {
   onAddSpotifyTrack: (track: any) => void;
   onUpdate: (updatedSongs: Song[]) => void;
   onManualApprove: (songId: string) => Promise<void>;
+  onAIMatchAll?: () => Promise<void>;
   loading: boolean;
 }
 
@@ -35,6 +36,7 @@ const ReviewStep = ({
   onAddSpotifyTrack,
   onUpdate,
   onManualApprove,
+  onAIMatchAll,
   loading
 }: ReviewStepProps) => {
   const [minConfidence, setMinConfidence] = useState(0); // Filter threshold
@@ -46,6 +48,10 @@ const ReviewStep = ({
   const [replaceSearchQuery, setReplaceSearchQuery] = useState("");
 
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
+
+  const unmatchedSongs = useMemo(() => 
+    selectedSongs.filter(song => !song.spotifyUri).length, 
+  [selectedSongs]);
 
   const replacingSong = useMemo(() => {
     if (!replacingSongId) return null;
@@ -193,6 +199,30 @@ const ReviewStep = ({
     setReplacingSongId(null);
     setReplaceSearchQuery("");
     setSearchResults([]);
+  };
+
+  const handleAIMatchAll = async () => {
+    if (!onAIMatchAll) {
+      toast.error("AI matching is not available");
+      return;
+    }
+    
+    if (!getAccessToken()) {
+      toast.error("You need to connect to Spotify first");
+      return;
+    }
+    
+    if (unmatchedSongs === 0) {
+      toast.info("No unmatched songs to process");
+      return;
+    }
+    
+    try {
+      await onAIMatchAll();
+    } catch (error) {
+      console.error("Failed to match songs with AI:", error);
+      toast.error("Failed to match songs with AI");
+    }
   };
 
   return (
@@ -377,7 +407,7 @@ const ReviewStep = ({
             </div>
           </div>
           
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -388,10 +418,25 @@ const ReviewStep = ({
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={handleSearch} disabled={loading} className="bg-green-600 hover:bg-green-700">
-              <Plus className="mr-1 h-4 w-4" />
-              Add Song
-            </Button>
+            <div className="flex gap-2 w-full md:w-auto">
+              <Button 
+                onClick={handleSearch} 
+                disabled={loading} 
+                className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add Song
+              </Button>
+              
+              <Button 
+                onClick={handleAIMatchAll}
+                disabled={loading || unmatchedSongs === 0 || !onAIMatchAll}
+                className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto"
+              >
+                <RefreshCw className="mr-1 h-4 w-4" />
+                AI Match ({unmatchedSongs})
+              </Button>
+            </div>
           </div>
 
           <div className="max-h-[400px] overflow-y-auto pr-2 rounded-md">
