@@ -17,9 +17,10 @@ export const SPOTIFY_CONFIG = {
       : 'http://localhost:8080/callback')
 };
 
-// AI Services
+// AI Services - Using a more recent Gemini model
 export const AI_CONFIG = {
-  geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || ''
+  geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+  geminiModel: 'gemini-1.5-flash' // Updated to use a more current model
 };
 
 // YouTube API

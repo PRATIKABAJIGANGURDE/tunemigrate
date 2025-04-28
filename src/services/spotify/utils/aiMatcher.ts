@@ -25,8 +25,8 @@ export const extractArtistWithAI = async (title: string): Promise<string> => {
     // Updated to use the correct API version and model
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     
-    // Use gemini-pro model which is available in the API
-    const modelName = "gemini-pro";
+    // Use correct model naming
+    const modelName = "gemini-1.5-flash";
     const model = genAI.getGenerativeModel({ model: modelName });
     
     const prompt = `Extract the primary artist name from this song title. 
@@ -75,7 +75,7 @@ export const analyzeSongDetailsWithAI = async (title: string, artist: string): P
   try {
     // Use the correct model available in the API
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const modelName = "gemini-pro"; // Use gemini-pro instead of gemini-1.0-pro
+    const modelName = "gemini-1.5-flash"; // Updated model name
     const model = genAI.getGenerativeModel({ model: modelName });
     
     const prompt = `Analyze this song information and return a JSON object:
@@ -151,7 +151,7 @@ export const extractSongDetailsWithAI = async (youtubeTitle: string): Promise<{
   
   try {
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Updated model name
     
     const prompt = `Extract structured song information from this YouTube video title.
     
