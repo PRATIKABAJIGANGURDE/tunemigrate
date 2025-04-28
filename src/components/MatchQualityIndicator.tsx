@@ -13,12 +13,14 @@ interface MatchQualityIndicatorProps {
   confidence: number;
   alternativeTracks?: any[];
   onReplace?: (track: any) => void;
+  showPercentage?: boolean;
 }
 
 const MatchQualityIndicator = ({ 
   confidence, 
   alternativeTracks = [], 
-  onReplace
+  onReplace,
+  showPercentage = true
 }: MatchQualityIndicatorProps) => {
   const getColor = () => {
     if (confidence >= 85) return "text-green-500";
@@ -32,7 +34,7 @@ const MatchQualityIndicator = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className={`font-medium ${getColor()}`}>
-              {confidence}%
+              {showPercentage ? `${confidence}%` : null}
             </div>
           </TooltipTrigger>
           <TooltipContent>
