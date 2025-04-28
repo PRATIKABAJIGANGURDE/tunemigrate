@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { initiateSpotifyLogin, isLoggedIn, logout, validateToken } from "@/services/spotifyService";
 import SpotifyIcon from "./icons/SpotifyIcon";
-import AIConfigDialog from "./AIConfigDialog";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { AlertCircle, ExternalLink } from "lucide-react";
@@ -122,9 +121,7 @@ const SpotifyAuth = ({ onLogin, isLoggedIn: propIsLoggedIn }: SpotifyAuthProps) 
             </div>
           )}
           
-          <div className="flex gap-3 w-full">
-            <AIConfigDialog />
-            
+          <div className="flex gap-3 w-full justify-center">            
             <Button
               onClick={handleLogout}
               variant="outline"
