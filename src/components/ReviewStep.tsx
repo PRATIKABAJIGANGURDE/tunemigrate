@@ -5,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw, Info } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw, Info, AlertTriangle } from "lucide-react";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -46,6 +46,7 @@ const ReviewStep = ({
   const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
   const [replacingSongId, setReplacingSongId] = useState<string | null>(null);
   const [replaceSearchQuery, setReplaceSearchQuery] = useState("");
+  const [aiProcessing, setAiProcessing] = useState(false);
 
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
 
@@ -218,12 +219,27 @@ const ReviewStep = ({
     }
     
     try {
+      setAiProcessing(true);
       await onAIMatchAll();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to match songs with AI:", error);
-      toast.error("Failed to match songs with AI");
+      
+      // Show more helpful error messages based on error type
+      if (error.message && error.message.includes('429')) {
+        toast.error(
+          "AI API rate limit exceeded. Please try again in a few minutes or match fewer songs at once.",
+          { duration: 8000 }
+        );
+      } else {
+        toast.error("Failed to match songs with AI");
+      }
+    } finally {
+      setAiProcessing(false);
     }
   };
+
+  // Display rate limit warning if trying to match many songs at once
+  const showRateLimitWarning = unmatchedSongs > 15;
 
   return (
     <motion.div
@@ -258,6 +274,15 @@ const ReviewStep = ({
               Tip: If the Add Song or Replace Song buttons aren't responding, press Enter after typing your search query.
             </AlertDescription>
           </Alert>
+
+          {showRateLimitWarning && (
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-sm text-amber-700">
+                Warning: Processing {unmatchedSongs} songs at once may hit API rate limits. Consider matching in smaller batches (5-10 songs) for best results.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="bg-muted/40 rounded-lg p-4">
             <h3 className="text-sm font-medium mb-3 flex items-center gap-1">
@@ -430,11 +455,22 @@ const ReviewStep = ({
               
               <Button 
                 onClick={handleAIMatchAll}
-                disabled={loading || unmatchedSongs === 0 || !onAIMatchAll}
-                className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto"
+                disabled={loading || unmatchedSongs === 0 || !onAIMatchAll || aiProcessing}
+                className={`${
+                  aiProcessing ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                } w-full md:w-auto`}
               >
-                <RefreshCw className="mr-1 h-4 w-4" />
-                AI Match ({unmatchedSongs})
+                {aiProcessing ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 border-2 border-t-transparent border-white animate-spin rounded-full"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-1 h-4 w-4" />
+                    AI Match ({unmatchedSongs})
+                  </>
+                )}
               </Button>
             </div>
           </div>

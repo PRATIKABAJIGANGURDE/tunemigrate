@@ -5,12 +5,68 @@ import { AI_CONFIG } from "@/config/env";
 // Store API key in a place that would be secure in production
 // Initialize with environment variable if available
 let geminiApiKey: string | null = AI_CONFIG.geminiApiKey || null;
+let apiCallCounter = 0;
+const MAX_API_CALLS_PER_MINUTE = 10; // Conservative limit
+const API_RESET_INTERVAL = 60000; // 1 minute in milliseconds
+let lastResetTime = Date.now();
 
 export const setGeminiApiKey = (key: string) => {
   geminiApiKey = key;
 };
 
 export const getGeminiApiKey = () => geminiApiKey;
+
+// Helper function for rate limiting
+const checkRateLimit = async () => {
+  // Reset counter if we're in a new minute
+  const now = Date.now();
+  if (now - lastResetTime > API_RESET_INTERVAL) {
+    apiCallCounter = 0;
+    lastResetTime = now;
+  }
+  
+  // Check if we've exceeded our self-imposed rate limit
+  if (apiCallCounter >= MAX_API_CALLS_PER_MINUTE) {
+    const waitTime = API_RESET_INTERVAL - (now - lastResetTime) + 1000; // Add 1 second buffer
+    console.log(`Rate limit reached, waiting ${waitTime}ms before next API call`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+    apiCallCounter = 0;
+    lastResetTime = Date.now();
+  }
+  
+  // Increment counter for this call
+  apiCallCounter++;
+};
+
+// Helper function to add retry logic
+const callGeminiWithRetry = async (model: any, prompt: string, maxRetries = 3) => {
+  let attempt = 0;
+  
+  while (attempt < maxRetries) {
+    try {
+      // Wait to respect rate limits
+      await checkRateLimit();
+      
+      // Make the actual API call
+      const result = await model.generateContent(prompt);
+      return await result.response;
+    } catch (error: any) {
+      attempt++;
+      
+      // Handle rate limit errors (429)
+      if (error.message && error.message.includes('429')) {
+        const waitTime = Math.min(2000 * Math.pow(2, attempt), 30000); // Exponential backoff
+        console.log(`Rate limit hit, retrying in ${waitTime}ms (attempt ${attempt})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        // For other errors, throw immediately
+        throw error;
+      }
+    }
+  }
+  
+  throw new Error(`Failed after ${maxRetries} attempts to call Gemini API`);
+};
 
 /**
  * Extract artist name using Gemini AI
@@ -26,7 +82,7 @@ export const extractArtistWithAI = async (title: string): Promise<string> => {
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     
     // Use correct model naming
-    const modelName = "gemini-1.5-flash";
+    const modelName = AI_CONFIG.geminiModel || "gemini-1.5-flash";
     const model = genAI.getGenerativeModel({ model: modelName });
     
     const prompt = `Extract the primary artist name from this song title. 
@@ -35,8 +91,7 @@ export const extractArtistWithAI = async (title: string): Promise<string> => {
     Song Title: ${title}
     Artist Name:`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await callGeminiWithRetry(model, prompt);
     const artistName = response.text().trim();
     
     console.log(`AI extracted artist "${artistName}" from "${title}"`);
@@ -75,7 +130,7 @@ export const analyzeSongDetailsWithAI = async (title: string, artist: string): P
   try {
     // Use the correct model available in the API
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const modelName = "gemini-1.5-flash"; // Updated model name
+    const modelName = AI_CONFIG.geminiModel || "gemini-1.5-flash"; // Updated model name
     const model = genAI.getGenerativeModel({ model: modelName });
     
     const prompt = `Analyze this song information and return a JSON object:
@@ -94,12 +149,20 @@ export const analyzeSongDetailsWithAI = async (title: string, artist: string): P
     
     Only return valid parseable JSON.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await callGeminiWithRetry(model, prompt);
     const analysisText = response.text().trim();
     
     try {
-      const analysis = JSON.parse(analysisText);
+      // Handle potential JSON formatting issues
+      let cleanedText = analysisText;
+      // Remove any markdown code blocks if present
+      if (cleanedText.startsWith("```json")) {
+        cleanedText = cleanedText.replace(/```json\n|\n```/g, '');
+      } else if (cleanedText.startsWith("```")) {
+        cleanedText = cleanedText.replace(/```\n|\n```/g, '');
+      }
+      
+      const analysis = JSON.parse(cleanedText);
       console.log("AI analyzed song details:", analysis);
       return analysis;
     } catch (e) {
@@ -151,7 +214,7 @@ export const extractSongDetailsWithAI = async (youtubeTitle: string): Promise<{
   
   try {
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Updated model name
+    const model = genAI.getGenerativeModel({ model: AI_CONFIG.geminiModel || "gemini-1.5-flash" }); // Updated model name
     
     const prompt = `Extract structured song information from this YouTube video title.
     
@@ -168,12 +231,20 @@ export const extractSongDetailsWithAI = async (youtubeTitle: string): Promise<{
     
     Only return valid JSON. Be as accurate as possible.`;
     
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await callGeminiWithRetry(model, prompt);
     const analysisText = response.text().trim();
     
     try {
-      const analysis = JSON.parse(analysisText);
+      // Handle potential JSON formatting issues
+      let cleanedText = analysisText;
+      // Remove any markdown code blocks if present
+      if (cleanedText.startsWith("```json")) {
+        cleanedText = cleanedText.replace(/```json\n|\n```/g, '');
+      } else if (cleanedText.startsWith("```")) {
+        cleanedText = cleanedText.replace(/```\n|\n```/g, '');
+      }
+      
+      const analysis = JSON.parse(cleanedText);
       console.log("AI extracted song details:", analysis);
       return analysis;
     } catch (e) {

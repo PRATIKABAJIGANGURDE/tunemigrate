@@ -20,7 +20,13 @@ export const SPOTIFY_CONFIG = {
 // AI Services - Using a more recent Gemini model
 export const AI_CONFIG = {
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
-  geminiModel: 'gemini-1.5-flash' // Updated to use a more current model
+  geminiModel: 'gemini-1.5-flash', // Updated to use a more current model
+  rateLimits: {
+    maxCallsPerMinute: 10,
+    batchSize: 5,
+    delayBetweenBatches: 3000,
+    maxRetries: 3
+  }
 };
 
 // YouTube API
