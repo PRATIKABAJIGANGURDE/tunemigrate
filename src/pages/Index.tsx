@@ -12,7 +12,6 @@ import { usePlaylistConversion } from "@/hooks/usePlaylistConversion";
 import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
 import Header from "@/components/Header";
-import AdBanner from "@/components/AdBanner";
 
 const Index = () => {
   const {
@@ -60,10 +59,6 @@ const Index = () => {
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
 
-  // Show ads only after the first step
-  const showAds = currentStep !== ConversionStep.INPUT_URL && 
-                  currentStep !== ConversionStep.EXTRACTING;
-
   return (
     <div className="container mx-auto p-4 max-w-5xl">
       <div className="space-y-8">
@@ -71,9 +66,6 @@ const Index = () => {
         <Header />
         
         <ProcessingSteps currentStep={currentStep} />
-        
-        {/* Display top ad banner after first step */}
-        {showAds && <AdBanner position="top" />}
         
         <div className="p-4 bg-white rounded-xl shadow-sm border">
           {currentStep === ConversionStep.INPUT_URL && (
@@ -132,9 +124,6 @@ const Index = () => {
             />
           )}
         </div>
-        
-        {/* Display bottom ad banner after first step */}
-        {showAds && <AdBanner position="bottom" />}
       </div>
     </div>
   );

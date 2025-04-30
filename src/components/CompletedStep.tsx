@@ -1,6 +1,7 @@
 
 import { motion } from "framer-motion";
 import AnimatedCard from "./AnimatedCard";
+import { useEffect } from "react";
 
 interface CompletedStepProps {
   playlistTitle: string;
@@ -15,6 +16,37 @@ const CompletedStep = ({
   onStartOver, 
   onOpenSpotify 
 }: CompletedStepProps) => {
+  
+  // Load the Buy Me a Coffee button script when the component mounts
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js";
+    script.async = true;
+    script.setAttribute('data-name', 'bmc-button');
+    script.setAttribute('data-slug', 'tunemigrate');
+    script.setAttribute('data-color', '#FFDD00');
+    script.setAttribute('data-emoji', '❤️');
+    script.setAttribute('data-font', 'Cookie');
+    script.setAttribute('data-text', 'show some love');
+    script.setAttribute('data-outline-color', '#000000');
+    script.setAttribute('data-font-color', '#000000');
+    script.setAttribute('data-coffee-color', '#ffffff');
+    
+    // Create a container for the button
+    const container = document.getElementById('bmc-container');
+    if (container) {
+      container.innerHTML = '';
+      container.appendChild(script);
+    }
+    
+    return () => {
+      // Clean up script when component unmounts
+      if (container) {
+        container.innerHTML = '';
+      }
+    };
+  }, []);
+  
   return (
     <motion.div
       key="completed"
@@ -44,7 +76,7 @@ const CompletedStep = ({
           </div>
         )}
         
-        <div className="flex gap-4">
+        <div className="flex gap-4 mb-8">
           <button 
             onClick={onStartOver}
             className="text-primary font-medium hover:underline"
@@ -58,6 +90,9 @@ const CompletedStep = ({
             Open in Spotify
           </button>
         </div>
+        
+        {/* Buy Me a Coffee button container */}
+        <div className="mt-6" id="bmc-container"></div>
       </AnimatedCard>
     </motion.div>
   );
