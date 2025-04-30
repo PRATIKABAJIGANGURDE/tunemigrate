@@ -22,10 +22,12 @@ export const AI_CONFIG = {
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
   geminiModel: 'gemini-1.5-flash', // Updated to use a more current model
   rateLimits: {
-    maxCallsPerMinute: 10,
-    batchSize: 5,
-    delayBetweenBatches: 3000,
-    maxRetries: 3
+    maxCallsPerMinute: 6, // Reduced to be more conservative
+    batchSize: 3, // Smaller batch size to reduce rate limiting issues
+    delayBetweenBatches: 5000, // Increased delay between batches
+    delayBetweenSongs: 1000, // Added delay between individual song processing
+    maxRetries: 3,
+    retryDelay: 2000 // Base delay for retries (will use exponential backoff)
   }
 };
 

@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import AnimatedCard from "./AnimatedCard";
@@ -251,10 +252,10 @@ const ReviewStep = ({
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Display full-page overlay with loader when processing */}
+      {/* Enhanced full-page overlay with loader when processing */}
       {aiProcessing && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
             <LoadingIndicator size="lg" text="Finding Spotify matches" />
             
             <div className="mt-6 space-y-4">
@@ -271,6 +272,13 @@ const ReviewStep = ({
               <div className="text-xs text-muted-foreground mt-2">
                 <p>Using AI to match titles, artists, and duration</p>
                 <p>Processing in batches to avoid rate limits</p>
+              </div>
+
+              <div className="mt-4 bg-amber-50 p-3 rounded-md border border-amber-200">
+                <p className="text-xs text-amber-700 flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  Please don't close or refresh the browser while matching is in progress
+                </p>
               </div>
             </div>
           </div>
