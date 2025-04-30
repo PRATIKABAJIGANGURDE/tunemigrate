@@ -5,7 +5,7 @@ import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MatchQualityIndicator from "./MatchQualityIndicator";
-import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw, Info, AlertTriangle } from "lucide-react";
+import { Clock, Filter, MusicIcon, Search, Plus, X, Trash2, YoutubeIcon, Check, ThumbsUp, RefreshCw, Info, AlertTriangle, Loader } from "lucide-react";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,6 +13,8 @@ import { getAccessToken } from "@/services/spotifyService";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import LoadingIndicator from "./LoadingIndicator";
 
 interface ReviewStepProps {
   playlistTitle: string;
@@ -249,6 +251,32 @@ const ReviewStep = ({
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Display full-page overlay with loader when processing */}
+      {aiProcessing && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+            <LoadingIndicator size="lg" text="Finding Spotify matches" />
+            
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-medium">Processing {unmatchedSongs} songs</h3>
+              <p className="text-sm text-muted-foreground">
+                This may take a few moments. Please be patient as we find the best matches.
+              </p>
+              
+              <div className="space-y-1">
+                <p className="text-xs text-right">{Math.min(100, Math.round((selectedSongs.filter(song => song.spotifyUri).length / selectedSongs.length) * 100))}%</p>
+                <Progress value={Math.min(100, Math.round((selectedSongs.filter(song => song.spotifyUri).length / selectedSongs.length) * 100))} className="h-2" />
+              </div>
+              
+              <div className="text-xs text-muted-foreground mt-2">
+                <p>Using AI to match titles, artists, and duration</p>
+                <p>Processing in batches to avoid rate limits</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AnimatedCard>
         <div className="space-y-6">
           <div className="flex justify-between items-center">
@@ -284,6 +312,7 @@ const ReviewStep = ({
             </Alert>
           )}
 
+          {/* Stats panel */}
           <div className="bg-muted/40 rounded-lg p-4">
             <h3 className="text-sm font-medium mb-3 flex items-center gap-1">
               <SpotifyIcon className="h-4 w-4 text-green-500" />
@@ -462,7 +491,7 @@ const ReviewStep = ({
               >
                 {aiProcessing ? (
                   <>
-                    <div className="mr-2 h-4 w-4 border-2 border-t-transparent border-white animate-spin rounded-full"></div>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
                 ) : (
@@ -476,6 +505,7 @@ const ReviewStep = ({
           </div>
 
           <div className="max-h-[400px] overflow-y-auto pr-2 rounded-md">
+            {/* Song list */}
             {displayedSongs.length > 0 ? (
               <ul className="space-y-3">
                 {displayedSongs.map(song => (
