@@ -89,6 +89,14 @@ const ReviewStep = ({
       });
   }, [selectedSongs, minConfidence]);
 
+  // Clear AI processing state when loading state changes
+  useEffect(() => {
+    if (!loading && aiProcessing) {
+      console.log("Loading state changed to false, clearing AI processing state");
+      setAiProcessing(false);
+    }
+  }, [loading]);
+
   const handleContinue = () => {
     if (displayedSongs.length === 0) {
       toast.error("No songs would be added to your playlist with the current quality filter");
@@ -223,6 +231,7 @@ const ReviewStep = ({
     
     try {
       setAiProcessing(true);
+      console.log("Starting AI matching process, setting aiProcessing to true");
       await onAIMatchAll();
     } catch (error: any) {
       console.error("Failed to match songs with AI:", error);
@@ -237,6 +246,7 @@ const ReviewStep = ({
         toast.error("Failed to match songs with AI");
       }
     } finally {
+      console.log("AI matching process completed in component, setting aiProcessing to false");
       setAiProcessing(false);
     }
   };

@@ -235,6 +235,8 @@ export const usePlaylistMatching = (
         toast.error("Failed to complete AI matching");
       }
     } finally {
+      // Ensure loading state is always turned off at the end
+      console.log("AI matching process completed, turning off loading state");
       actions.setLoading(false);
     }
   };

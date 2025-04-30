@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { ConversionStep } from "@/types";
 import UrlInput from "@/components/UrlInput";
 import ExtractionStep from "@/components/ExtractionStep";
@@ -38,7 +38,7 @@ const Index = () => {
 
   const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(isLoggedIn());
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkLoginStatus = () => {
       setIsUserLoggedIn(isLoggedIn());
     };
@@ -49,10 +49,13 @@ const Index = () => {
     // Add event listener to check when window gets focus
     window.addEventListener('focus', checkLoginStatus);
     
+    // Debug loading state changes
+    console.log(`Current loading state: ${loading}`);
+    
     return () => {
       window.removeEventListener('focus', checkLoginStatus);
     };
-  }, []);
+  }, [loading]);
 
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
