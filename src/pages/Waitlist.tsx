@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   Form,
@@ -18,6 +17,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Header from "@/components/Header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoCircle } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -78,10 +79,16 @@ const Waitlist = () => {
         <div className="p-6 bg-white rounded-xl shadow-sm border">
           <div className="max-w-md mx-auto">
             <h1 className="text-2xl font-bold mb-2">Join the Waitlist</h1>
-            <p className="text-muted-foreground mb-6">
-              Due to Spotify API limitations, we're currently managing user access manually. 
-              Please submit your details below to join the waitlist.
-            </p>
+            
+            <Alert className="mb-6 bg-blue-50 text-blue-800 border-blue-200">
+              <InfoCircle className="h-4 w-4" />
+              <AlertTitle>Why a waitlist?</AlertTitle>
+              <AlertDescription>
+                Due to Spotify API quota limitations, we can only support a limited number of users at a time. 
+                New users need to be manually approved by our team to ensure service quality for everyone.
+                Fill out the form below, and we'll notify you when you've been granted access.
+              </AlertDescription>
+            </Alert>
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

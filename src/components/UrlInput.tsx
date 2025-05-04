@@ -9,6 +9,7 @@ import { extractPlaylistId } from "@/services/youtubeService";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { initiateSpotifyLogin, isLoggedIn, logout, setGeminiApiKey } from "@/services/spotifyService";
 import NewUserModal from "./NewUserModal";
+import { Link } from "react-router-dom";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -64,17 +65,6 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
 
   const handleExistingUser = () => {
     // Close the modal and proceed with the submission if we have a pending URL
-    setShowNewUserModal(false);
-    if (pendingUrl) {
-      setError(null);
-      onSubmit(pendingUrl);
-      setPendingUrl(null);
-    }
-  };
-
-  const handleNewUser = () => {
-    // For new users, we can show a welcome message or guide before proceeding
-    toast.success("Welcome to TuneMigrate! Let's get started with your first conversion.");
     setShowNewUserModal(false);
     if (pendingUrl) {
       setError(null);
@@ -196,7 +186,6 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
           isOpen={showNewUserModal}
           onClose={() => setShowNewUserModal(false)}
           onExistingUser={handleExistingUser}
-          onNewUser={handleNewUser}
         />
       </motion.div>
     </AnimatedCard>

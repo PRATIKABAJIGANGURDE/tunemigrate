@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ interface NewUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExistingUser: () => void;
-  onNewUser: () => void;
+  onNewUser?: () => void; // Making this optional since we'll handle navigation separately
 }
 
 const NewUserModal = ({
@@ -22,6 +23,19 @@ const NewUserModal = ({
   onExistingUser,
   onNewUser,
 }: NewUserModalProps) => {
+  const navigate = useNavigate();
+  
+  const handleNewUser = () => {
+    // Close the modal first
+    onClose();
+    // If onNewUser callback exists, call it
+    if (onNewUser) {
+      onNewUser();
+    }
+    // Navigate to waitlist page
+    navigate("/waitlist");
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -35,7 +49,7 @@ const NewUserModal = ({
           <Button
             variant="outline"
             className="border-primary text-primary hover:bg-primary/10"
-            onClick={onNewUser}
+            onClick={handleNewUser}
           >
             Yes, I'm new here
           </Button>

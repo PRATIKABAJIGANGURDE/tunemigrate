@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { ConversionStep } from "@/types";
 import UrlInput from "@/components/UrlInput";
@@ -13,7 +12,6 @@ import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
 import Header from "@/components/Header";
 import NewUserModal from "@/components/NewUserModal";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -71,12 +69,6 @@ const Index = () => {
   }, [currentStep]);
 
   const handleExistingUser = () => {
-    setShowNewUserModal(false);
-    localStorage.setItem('has_visited_before', 'true');
-  };
-
-  const handleNewUser = () => {
-    toast.success("Welcome to TuneMigrate! We'll guide you through the conversion process.");
     setShowNewUserModal(false);
     localStorage.setItem('has_visited_before', 'true');
   };
@@ -161,7 +153,6 @@ const Index = () => {
         isOpen={showNewUserModal}
         onClose={() => setShowNewUserModal(false)}
         onExistingUser={handleExistingUser}
-        onNewUser={handleNewUser}
       />
     </div>
   );
