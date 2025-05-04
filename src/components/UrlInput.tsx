@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { extractPlaylistId } from "@/services/youtubeService";
 import SpotifyIcon from "./icons/SpotifyIcon";
 import { initiateSpotifyLogin, isLoggedIn, logout, setGeminiApiKey } from "@/services/spotifyService";
+import NewUserModal from "./NewUserModal";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -18,6 +19,8 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const spotifyConnected = isLoggedIn();
+  const [showNewUserModal, setShowNewUserModal] = useState(false);
+  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
 
   // Initialize Gemini API key using useEffect hook
   useEffect(() => {
@@ -26,29 +29,58 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
     localStorage.setItem("gemini_api_key", apiKey);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const validateAndProceed = (urlToSubmit: string) => {
     if (!spotifyConnected) {
       setError("Please connect your Spotify account first");
       toast.error("Please connect to Spotify before proceeding");
-      return;
+      return false;
     }
     
-    if (!url.trim()) {
+    if (!urlToSubmit.trim()) {
       setError("Please enter a YouTube playlist URL");
-      return;
+      return false;
     }
     
-    const playlistId = extractPlaylistId(url);
+    const playlistId = extractPlaylistId(urlToSubmit);
     if (!playlistId) {
       setError("Please enter a valid YouTube playlist URL");
       toast.error("Invalid YouTube playlist URL");
-      return;
+      return false;
     }
     
-    setError(null);
-    onSubmit(url);
+    return true;
+  };
+
+  const handleStartConversion = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // First validate the URL
+    if (validateAndProceed(url)) {
+      // If valid, store it for later and show the modal
+      setPendingUrl(url);
+      setShowNewUserModal(true);
+    }
+  };
+
+  const handleExistingUser = () => {
+    // Close the modal and proceed with the submission if we have a pending URL
+    setShowNewUserModal(false);
+    if (pendingUrl) {
+      setError(null);
+      onSubmit(pendingUrl);
+      setPendingUrl(null);
+    }
+  };
+
+  const handleNewUser = () => {
+    // For new users, we can show a welcome message or guide before proceeding
+    toast.success("Welcome to TuneMigrate! Let's get started with your first conversion.");
+    setShowNewUserModal(false);
+    if (pendingUrl) {
+      setError(null);
+      onSubmit(pendingUrl);
+      setPendingUrl(null);
+    }
   };
 
   const handleSpotifyLogin = async () => {
@@ -81,7 +113,7 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleStartConversion} className="space-y-4">
           {!spotifyConnected ? (
             <div className="flex flex-col space-y-4">
               <Button
@@ -158,10 +190,17 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
             </p>
           </div>
         </form>
+
+        {/* New User Modal */}
+        <NewUserModal
+          isOpen={showNewUserModal}
+          onClose={() => setShowNewUserModal(false)}
+          onExistingUser={handleExistingUser}
+          onNewUser={handleNewUser}
+        />
       </motion.div>
     </AnimatedCard>
   );
 };
 
 export default UrlInput;
-

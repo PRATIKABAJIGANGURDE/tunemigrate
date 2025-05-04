@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ConversionStep } from "@/types";
 import UrlInput from "@/components/UrlInput";
 import ExtractionStep from "@/components/ExtractionStep";
@@ -12,6 +12,8 @@ import { usePlaylistConversion } from "@/hooks/usePlaylistConversion";
 import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
 import Header from "@/components/Header";
+import NewUserModal from "@/components/NewUserModal";
+import { toast } from "sonner";
 
 const Index = () => {
   const {
@@ -36,6 +38,7 @@ const Index = () => {
   } = usePlaylistConversion();
 
   const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(isLoggedIn());
+  const [showNewUserModal, setShowNewUserModal] = useState(false);
 
   useEffect(() => {
     const checkLoginStatus = () => {
@@ -55,6 +58,26 @@ const Index = () => {
       window.removeEventListener('focus', checkLoginStatus);
     };
   }, [loading]);
+
+  useEffect(() => {
+    // Check if this is the first visit to the app
+    const hasVisitedBefore = localStorage.getItem('has_visited_before');
+    if (!hasVisitedBefore && currentStep === ConversionStep.INPUT_URL) {
+      // Show the new user modal on first visit
+      setShowNewUserModal(true);
+    }
+  }, [currentStep]);
+
+  const handleExistingUser = () => {
+    setShowNewUserModal(false);
+    localStorage.setItem('has_visited_before', 'true');
+  };
+
+  const handleNewUser = () => {
+    toast.success("Welcome to TuneMigrate! We'll guide you through the conversion process.");
+    setShowNewUserModal(false);
+    localStorage.setItem('has_visited_before', 'true');
+  };
 
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
@@ -125,6 +148,14 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Modal for first-time visitors */}
+      <NewUserModal
+        isOpen={showNewUserModal}
+        onClose={() => setShowNewUserModal(false)}
+        onExistingUser={handleExistingUser}
+        onNewUser={handleNewUser}
+      />
     </div>
   );
 };
