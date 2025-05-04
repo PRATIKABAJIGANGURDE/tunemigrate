@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Header from "@/components/Header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -81,7 +81,7 @@ const Waitlist = () => {
             <h1 className="text-2xl font-bold mb-2">Join the Waitlist</h1>
             
             <Alert className="mb-6 bg-blue-50 text-blue-800 border-blue-200">
-              <InfoCircle className="h-4 w-4" />
+              <Info className="h-4 w-4" />
               <AlertTitle>Why a waitlist?</AlertTitle>
               <AlertDescription>
                 Due to Spotify API quota limitations, we can only support a limited number of users at a time. 
