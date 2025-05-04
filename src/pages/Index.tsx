@@ -14,6 +14,8 @@ import ProcessingSteps from "@/components/ProcessingSteps";
 import Header from "@/components/Header";
 import NewUserModal from "@/components/NewUserModal";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const {
@@ -88,7 +90,12 @@ const Index = () => {
         {/* Header component */}
         <Header />
         
-        <ProcessingSteps currentStep={currentStep} />
+        <div className="flex justify-between items-center">
+          <ProcessingSteps currentStep={currentStep} />
+          <Link to="/waitlist">
+            <Button variant="outline" size="sm">Join Waitlist</Button>
+          </Link>
+        </div>
         
         <div className="p-4 bg-white rounded-xl shadow-sm border">
           {currentStep === ConversionStep.INPUT_URL && (

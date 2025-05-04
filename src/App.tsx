@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Callback from "./pages/Callback";
 import NotFound from "./pages/NotFound";
 import Tools from "./pages/Tools";
+import Waitlist from "./pages/Waitlist";
 import React from "react";
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
             <Route path="/" element={<Landing />} />
             <Route path="/app" element={<Index />} />
             <Route path="/tools" element={<Tools />} />
+            <Route path="/waitlist" element={<Waitlist />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
