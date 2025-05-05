@@ -39,11 +39,11 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
     
-    // Send notification to admin (you could replace this with your email)
+    // Send notification to admin and your email address with label specification
     const adminEmailResponse = await resend.emails.send({
       from: "TuneMigrate Waitlist <onboarding@resend.dev>",
-      to: ["admin@tunemigrate.com", "my@email.com"], // Added your personal email
-      subject: "New Waitlist Registration",
+      to: ["admin@tunemigrate.com", "pratikgangurde35@gmail.com"], // Updated with your specific email
+      subject: "[tunemigrate] New Waitlist Registration", // Added label in subject for email filtering
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1>New Waitlist Registration</h1>
@@ -54,6 +54,11 @@ const handler = async (req: Request): Promise<Response> => {
           </ul>
         </div>
       `,
+      // Adding headers for email categorization
+      headers: {
+        "X-Entity-Ref-ID": `waitlist-${Date.now()}`,
+        "X-Category": "tunemigrate",
+      }
     });
 
     console.log("Emails sent successfully:", { user: userEmailResponse, admin: adminEmailResponse });
