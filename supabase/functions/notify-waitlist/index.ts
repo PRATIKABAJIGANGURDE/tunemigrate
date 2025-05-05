@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send notification to admin (you could replace this with your email)
     const adminEmailResponse = await resend.emails.send({
       from: "TuneMigrate Waitlist <onboarding@resend.dev>",
-      to: ["admin@tunemigrate.com"], // Replace with your admin email
+      to: ["admin@tunemigrate.com", "my@email.com"], // Added your personal email
       subject: "New Waitlist Registration",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
