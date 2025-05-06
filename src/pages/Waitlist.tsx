@@ -65,6 +65,29 @@ const Waitlist = () => {
         return;
       }
       
+      // Send notification email
+      try {
+        const response = await fetch("https://mbgvfzuubejhlbkxdksc.functions.supabase.co/waitlist-notification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: values.name,
+            email: values.email
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error("Email notification error:", await response.text());
+          // We still consider the submission successful even if email fails
+          // as the data is stored in the database
+        }
+      } catch (emailError) {
+        console.error("Failed to send notification:", emailError);
+        // Continue with successful submission even if email notification fails
+      }
+      
       // Show success message
       toast.success("You've been added to the waitlist!", {
         description: "We'll notify you when you've been granted access."
