@@ -76,7 +76,10 @@ const CompletedStep = ({
           </div>
         )}
         
-        <div className="flex gap-4 mb-8">
+        {/* Buy Me a Coffee button container - moved above the buttons */}
+        <div className="mb-6" id="bmc-container"></div>
+        
+        <div className="flex gap-4">
           <button 
             onClick={onStartOver}
             className="text-primary font-medium hover:underline"
@@ -90,9 +93,6 @@ const CompletedStep = ({
             Open in Spotify
           </button>
         </div>
-        
-        {/* Buy Me a Coffee button container */}
-        <div className="mt-6" id="bmc-container"></div>
       </AnimatedCard>
     </motion.div>
   );
