@@ -1,3 +1,4 @@
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Song } from "@/types";
 import { AI_CONFIG } from "@/config/env";
@@ -5,10 +6,6 @@ import { AI_CONFIG } from "@/config/env";
 // Store API key in a place that would be secure in production
 // Initialize with environment variable if available
 let geminiApiKey: string | null = AI_CONFIG.geminiApiKey || null;
-let apiCallCounter = 0;
-const MAX_API_CALLS_PER_MINUTE = 10; // Conservative limit
-const API_RESET_INTERVAL = 60000; // 1 minute in milliseconds
-let lastResetTime = Date.now();
 
 export const setGeminiApiKey = (key: string) => {
   geminiApiKey = key;
@@ -16,38 +13,13 @@ export const setGeminiApiKey = (key: string) => {
 
 export const getGeminiApiKey = () => geminiApiKey;
 
-// Helper function for rate limiting
-const checkRateLimit = async () => {
-  // Reset counter if we're in a new minute
-  const now = Date.now();
-  if (now - lastResetTime > API_RESET_INTERVAL) {
-    apiCallCounter = 0;
-    lastResetTime = now;
-  }
-  
-  // Check if we've exceeded our self-imposed rate limit
-  if (apiCallCounter >= MAX_API_CALLS_PER_MINUTE) {
-    const waitTime = API_RESET_INTERVAL - (now - lastResetTime) + 1000; // Add 1 second buffer
-    console.log(`Rate limit reached, waiting ${waitTime}ms before next API call`);
-    await new Promise(resolve => setTimeout(resolve, waitTime));
-    apiCallCounter = 0;
-    lastResetTime = Date.now();
-  }
-  
-  // Increment counter for this call
-  apiCallCounter++;
-};
-
-// Helper function to add retry logic
+// Helper function for making API calls without rate limiting
 const callGeminiWithRetry = async (model: any, prompt: string, maxRetries = 3) => {
   let attempt = 0;
   
   while (attempt < maxRetries) {
     try {
-      // Wait to respect rate limits
-      await checkRateLimit();
-      
-      // Make the actual API call
+      // Make the API call without rate limiting
       const result = await model.generateContent(prompt);
       return await result.response;
     } catch (error: any) {
@@ -602,3 +574,4 @@ export const getMatchDetails = (song: Song, spotifyTrack: any): {
     totalScore
   };
 };
+
