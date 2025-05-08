@@ -14,7 +14,6 @@ import Header from "@/components/Header";
 import NewUserModal from "@/components/NewUserModal";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-
 const Index = () => {
   const {
     currentStep,
@@ -36,29 +35,25 @@ const Index = () => {
     handleManualApprove,
     handleAIMatchAll
   } = usePlaylistConversion();
-
   const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(isLoggedIn());
   const [showNewUserModal, setShowNewUserModal] = useState(false);
-
   useEffect(() => {
     const checkLoginStatus = () => {
       setIsUserLoggedIn(isLoggedIn());
     };
-    
+
     // Check initially
     checkLoginStatus();
-    
+
     // Add event listener to check when window gets focus
     window.addEventListener('focus', checkLoginStatus);
-    
+
     // Debug loading state changes
     console.log(`Current loading state: ${loading}`);
-    
     return () => {
       window.removeEventListener('focus', checkLoginStatus);
     };
   }, [loading]);
-
   useEffect(() => {
     // Check if this is the first visit to the app
     const hasVisitedBefore = localStorage.getItem('has_visited_before');
@@ -67,7 +62,6 @@ const Index = () => {
       setShowNewUserModal(true);
     }
   }, [currentStep]);
-
   const handleExistingUser = () => {
     setShowNewUserModal(false);
     localStorage.setItem('has_visited_before', 'true');
@@ -75,9 +69,7 @@ const Index = () => {
 
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
-
-  return (
-    <div className="container mx-auto p-4 max-w-5xl">
+  return <div className="container mx-auto p-4 max-w-5xl">
       <div className="space-y-8">
         {/* Header component */}
         <Header />
@@ -85,77 +77,29 @@ const Index = () => {
         <div className="flex justify-between items-center">
           <ProcessingSteps currentStep={currentStep} />
           <Link to="/waitlist">
-            <Button variant="outline" size="sm">Join Waitlist</Button>
+            <Button variant="outline" size="sm" className="font-normal">Join Waitlist</Button>
           </Link>
         </div>
         
         <div className="p-4 bg-white rounded-xl shadow-sm border">
-          {currentStep === ConversionStep.INPUT_URL && (
-            <UrlInput onSubmit={handleUrlSubmit} loading={loading} />
-          )}
+          {currentStep === ConversionStep.INPUT_URL && <UrlInput onSubmit={handleUrlSubmit} loading={loading} />}
           
-          {currentStep === ConversionStep.EXTRACTING && (
-            <ExtractionStep />
-          )}
+          {currentStep === ConversionStep.EXTRACTING && <ExtractionStep />}
           
-          {currentStep === ConversionStep.EDIT_SONGS && (
-            <SongEditStep 
-              songs={playlistData.songs}
-              onUpdate={handleSongUpdate}
-              onContinue={handleContinueToNaming}
-            />
-          )}
+          {currentStep === ConversionStep.EDIT_SONGS && <SongEditStep songs={playlistData.songs} onUpdate={handleSongUpdate} onContinue={handleContinueToNaming} />}
           
-          {currentStep === ConversionStep.NAME_PLAYLIST && (
-            <NamingStep 
-              title={playlistData.title}
-              onSubmit={handlePlaylistNameSubmit}
-              loading={loading}
-            />
-          )}
+          {currentStep === ConversionStep.NAME_PLAYLIST && <NamingStep title={playlistData.title} onSubmit={handlePlaylistNameSubmit} loading={loading} />}
           
-          {currentStep === ConversionStep.REVIEW_MATCHES && (
-            <ReviewStep 
-              songs={playlistData.songs}
-              onContinue={handleCreatePlaylist}
-              onBack={handleBackToNaming}
-              onUpdate={handleSongUpdate}
-              onAddSpotifySong={handleAddSpotifySong}
-              onAddSpotifyTrack={handleAddSpotifyTrack}
-              onManualApprove={handleManualApprove}
-              onAIMatchAll={handleAIMatchAll}
-              loading={loading}
-              playlistTitle={playlistData.title}
-            />
-          )}
+          {currentStep === ConversionStep.REVIEW_MATCHES && <ReviewStep songs={playlistData.songs} onContinue={handleCreatePlaylist} onBack={handleBackToNaming} onUpdate={handleSongUpdate} onAddSpotifySong={handleAddSpotifySong} onAddSpotifyTrack={handleAddSpotifyTrack} onManualApprove={handleManualApprove} onAIMatchAll={handleAIMatchAll} loading={loading} playlistTitle={playlistData.title} />}
           
-          {currentStep === ConversionStep.CREATE_PLAYLIST && (
-            <CreationStep 
-              playlistTitle={playlistData.title}
-              selectedSongsCount={selectedSongsCount}
-              currentProgress={conversionProgress}
-            />
-          )}
+          {currentStep === ConversionStep.CREATE_PLAYLIST && <CreationStep playlistTitle={playlistData.title} selectedSongsCount={selectedSongsCount} currentProgress={conversionProgress} />}
           
-          {currentStep === ConversionStep.COMPLETED && (
-            <CompletedStep 
-              playlistTitle={playlistData.title}
-              matchingStats={matchingStats}
-              onOpenSpotify={handleOpenSpotify}
-              onStartOver={handleStartOver}
-            />
-          )}
+          {currentStep === ConversionStep.COMPLETED && <CompletedStep playlistTitle={playlistData.title} matchingStats={matchingStats} onOpenSpotify={handleOpenSpotify} onStartOver={handleStartOver} />}
         </div>
       </div>
 
       {/* Modal for first-time visitors */}
-      <NewUserModal
-        isOpen={showNewUserModal}
-        onClose={() => setShowNewUserModal(false)}
-        onExistingUser={handleExistingUser}
-      />
-    </div>
-  );
+      <NewUserModal isOpen={showNewUserModal} onClose={() => setShowNewUserModal(false)} onExistingUser={handleExistingUser} />
+    </div>;
 };
-
 export default Index;
