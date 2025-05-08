@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { ConversionStep } from "@/types";
 import UrlInput from "@/components/UrlInput";
@@ -14,6 +15,7 @@ import Header from "@/components/Header";
 import NewUserModal from "@/components/NewUserModal";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+
 const Index = () => {
   const {
     currentStep,
@@ -37,6 +39,7 @@ const Index = () => {
   } = usePlaylistConversion();
   const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(isLoggedIn());
   const [showNewUserModal, setShowNewUserModal] = useState(false);
+
   useEffect(() => {
     const checkLoginStatus = () => {
       setIsUserLoggedIn(isLoggedIn());
@@ -54,6 +57,7 @@ const Index = () => {
       window.removeEventListener('focus', checkLoginStatus);
     };
   }, [loading]);
+
   useEffect(() => {
     // Check if this is the first visit to the app
     const hasVisitedBefore = localStorage.getItem('has_visited_before');
@@ -62,6 +66,7 @@ const Index = () => {
       setShowNewUserModal(true);
     }
   }, [currentStep]);
+
   const handleExistingUser = () => {
     setShowNewUserModal(false);
     localStorage.setItem('has_visited_before', 'true');
@@ -69,15 +74,16 @@ const Index = () => {
 
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
+  
   return <div className="container mx-auto p-4 max-w-5xl">
       <div className="space-y-8">
         {/* Header component */}
         <Header />
         
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <ProcessingSteps currentStep={currentStep} />
           <Link to="/waitlist">
-            <Button variant="outline" size="sm" className="font-normal">Join Waitlist</Button>
+            <Button size="lg" className="font-medium px-8">Join Waitlist</Button>
           </Link>
         </div>
         
@@ -102,4 +108,5 @@ const Index = () => {
       <NewUserModal isOpen={showNewUserModal} onClose={() => setShowNewUserModal(false)} onExistingUser={handleExistingUser} />
     </div>;
 };
+
 export default Index;
