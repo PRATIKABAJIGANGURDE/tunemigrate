@@ -19,6 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Header from "@/components/Header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -44,11 +45,21 @@ const Waitlist = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     
-    // In a real application, you'd send this data to a server
-    // For now we'll simulate a submission with a timeout
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Insert the data into the waitlist table in Supabase
+      const { error } = await supabase
+        .from('waitlist')
+        .insert([
+          { 
+            name: values.name,
+            email: values.email
+          }
+        ]);
+      
+      if (error) {
+        console.error("Supabase error:", error);
+        throw new Error(error.message);
+      }
       
       // Show success message
       toast.success("You've been added to the waitlist!", {
@@ -63,6 +74,7 @@ const Waitlist = () => {
         navigate("/");
       }, 2000);
     } catch (error) {
+      console.error("Submission error:", error);
       toast.error("Something went wrong", {
         description: "Please try again later."
       });
