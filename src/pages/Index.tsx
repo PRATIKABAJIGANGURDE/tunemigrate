@@ -13,8 +13,6 @@ import { isLoggedIn } from "@/services/spotifyService";
 import ProcessingSteps from "@/components/ProcessingSteps";
 import Header from "@/components/Header";
 import NewUserModal from "@/components/NewUserModal";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 
 const Index = () => {
   const {
@@ -82,9 +80,6 @@ const Index = () => {
         
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <ProcessingSteps currentStep={currentStep} />
-          <Link to="/waitlist">
-            <Button size="lg" className="font-medium px-8">Join Waitlist</Button>
-          </Link>
         </div>
         
         <div className="p-4 bg-white rounded-xl shadow-sm border">
