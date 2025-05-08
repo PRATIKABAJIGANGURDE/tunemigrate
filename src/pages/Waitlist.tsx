@@ -19,7 +19,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Header from "@/components/Header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -45,48 +44,11 @@ const Waitlist = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     
+    // In a real application, you'd send this data to a server
+    // For now we'll simulate a submission with a timeout
     try {
-      // Store entry in Supabase
-      const { error: insertError } = await supabase
-        .from('waitlist')
-        .insert([{ 
-          name: values.name, 
-          email: values.email 
-        }]);
-      
-      if (insertError) {
-        if (insertError.code === '23505') { // Unique violation error code
-          toast.error("This email is already on the waitlist");
-        } else {
-          console.error("Supabase insert error:", insertError);
-          toast.error("Failed to join waitlist");
-        }
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Send notification email
-      try {
-        const response = await fetch("https://mbgvfzuubejhlbkxdksc.functions.supabase.co/waitlist-notification", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: values.name,
-            email: values.email
-          }),
-        });
-        
-        if (!response.ok) {
-          console.error("Email notification error:", await response.text());
-          // We still consider the submission successful even if email fails
-          // as the data is stored in the database
-        }
-      } catch (emailError) {
-        console.error("Failed to send notification:", emailError);
-        // Continue with successful submission even if email notification fails
-      }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Show success message
       toast.success("You've been added to the waitlist!", {
@@ -101,7 +63,6 @@ const Waitlist = () => {
         navigate("/");
       }, 2000);
     } catch (error) {
-      console.error("Submission error:", error);
       toast.error("Something went wrong", {
         description: "Please try again later."
       });

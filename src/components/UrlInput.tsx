@@ -10,7 +10,6 @@ import SpotifyIcon from "./icons/SpotifyIcon";
 import { initiateSpotifyLogin, isLoggedIn, logout, setGeminiApiKey } from "@/services/spotifyService";
 import NewUserModal from "./NewUserModal";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -23,53 +22,18 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
   const spotifyConnected = isLoggedIn();
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
-  const [isApprovedUser, setIsApprovedUser] = useState(true); // Default to true until we check
 
   // Initialize Gemini API key using useEffect hook
   useEffect(() => {
     const apiKey = "AIzaSyAQZZw6P7EGCe5usjNfjfoilFOswghFnY0";
     setGeminiApiKey(apiKey);
     localStorage.setItem("gemini_api_key", apiKey);
-    
-    // Check if user is in waitlist and approved
-    const checkWaitlistStatus = async () => {
-      // Get the user's email from localstorage or wherever it's stored
-      const userEmail = localStorage.getItem("spotify_user_email");
-      
-      if (userEmail) {
-        const { data, error } = await supabase
-          .from('waitlist')
-          .select('*')
-          .eq('email', userEmail)
-          .single();
-          
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error checking waitlist status:", error);
-          return;
-        }
-        
-        // If user is not in the waitlist, they're not approved
-        if (!data) {
-          setIsApprovedUser(false);
-        }
-      }
-    };
-    
-    if (spotifyConnected) {
-      checkWaitlistStatus();
-    }
-  }, [spotifyConnected]);
+  }, []);
 
   const validateAndProceed = (urlToSubmit: string) => {
     if (!spotifyConnected) {
       setError("Please connect your Spotify account first");
       toast.error("Please connect to Spotify before proceeding");
-      return false;
-    }
-    
-    if (!isApprovedUser) {
-      setError("Your account is not yet approved");
-      toast.error("Please join the waitlist for access");
       return false;
     }
     
@@ -207,17 +171,6 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
                   Disconnect from Spotify
                 </Button>
               </div>
-              
-              {!isApprovedUser && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-                  <p className="text-yellow-800 mb-2">Your account is not yet approved</p>
-                  <Link to="/waitlist">
-                    <Button variant="outline" className="bg-yellow-100 border-yellow-300 text-yellow-800 hover:bg-yellow-200">
-                      Join the Waitlist
-                    </Button>
-                  </Link>
-                </div>
-              )}
             </div>
           )}
 
