@@ -162,15 +162,13 @@ const UrlInput = ({ onSubmit, loading = false }: UrlInputProps) => {
                 Connected to Spotify
               </div>
               
-              <div className="flex justify-center items-center">
-                <Button 
-                  variant="outline" 
-                  className="text-sm border-red-200 text-red-600 hover:bg-red-50"
-                  onClick={handleLogout}
-                >
-                  Disconnect from Spotify
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full text-sm border-red-200 text-red-600 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                Disconnect from Spotify
+              </Button>
             </div>
           )}
 
