@@ -121,11 +121,11 @@ const SpotifyAuth = ({ onLogin, isLoggedIn: propIsLoggedIn }: SpotifyAuthProps) 
             </div>
           )}
           
-          <div className="flex gap-3 w-full justify-center">            
+          <div className="flex w-full justify-center">            
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="flex-1 text-sm border-red-200 text-red-600 hover:bg-red-50"
+              className="w-full text-sm border-red-200 text-red-600 hover:bg-red-50"
               disabled={validatingToken}
             >
               Disconnect
