@@ -5,7 +5,6 @@ import LoadingIndicator from "./LoadingIndicator";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Clock, MusicIcon, Calendar, PercentIcon } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CreationStepProps {
   playlistTitle: string;
@@ -20,7 +19,6 @@ const CreationStep = ({
 }: CreationStepProps) => {
   const progressPercent = Math.min(100, currentProgress);
   const [showDetailedInfo, setShowDetailedInfo] = useState(false);
-  const isMobile = useIsMobile();
   
   return (
     <motion.div
@@ -30,8 +28,8 @@ const CreationStep = ({
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <AnimatedCard className="flex flex-col items-center justify-center py-8 sm:py-16 px-4 sm:px-8">
-        <LoadingIndicator text="Creating Spotify playlist" size={isMobile ? "md" : "lg"} />
+      <AnimatedCard className="flex flex-col items-center justify-center py-16">
+        <LoadingIndicator text="Creating Spotify playlist" size="lg" />
         
         {progressPercent > 0 && (
           <div className="w-full max-w-xs mt-6 bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
@@ -45,11 +43,11 @@ const CreationStep = ({
         <p className="mt-4 text-sm font-medium">
           {progressPercent > 0 ? `${progressPercent}% complete` : ''}
         </p>
-        <p className="mt-2 text-muted-foreground text-sm text-center">
+        <p className="mt-2 text-muted-foreground text-sm">
           Finding and adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
         
-        <div className="text-xs text-muted-foreground mt-4 max-w-xs space-y-1 w-full">
+        <div className="text-xs text-muted-foreground mt-4 max-w-xs space-y-1">
           <div className="flex items-center justify-between">
             <p className="font-medium">Smart matching in progress:</p>
             <Button 
@@ -62,38 +60,38 @@ const CreationStep = ({
             </Button>
           </div>
           
-          <ul className="list-disc list-inside space-y-2 px-1">
-            <li className="flex items-start flex-wrap">
+          <ul className="list-disc list-inside space-y-2">
+            <li className="flex items-start">
               <span className="inline-flex items-center">
-                <MusicIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                <MusicIcon className="h-3 w-3 mr-1" />
                 AI-powered artist & title comparison
               </span>
             </li>
-            <li className="flex items-start flex-wrap">
+            <li className="flex items-start">
               <span className="inline-flex items-center">
-                <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                <Clock className="h-3 w-3 mr-1" />
                 Duration matching (10-20s ideal, 1-2min poor)
               </span>
             </li>
-            <li className="flex items-start flex-wrap">
+            <li className="flex items-start">
               <span className="inline-flex items-center">
-                <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                <Calendar className="h-3 w-3 mr-1" />
                 Release & upload date analysis
               </span>
             </li>
-            <li className="flex items-start flex-wrap">
+            <li className="flex items-start">
               <span className="inline-flex items-center">
-                <PercentIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                <PercentIcon className="h-3 w-3 mr-1" />
                 Match confidence calculation
               </span>
             </li>
           </ul>
 
           {showDetailedInfo && (
-            <div className="mt-4 bg-muted p-3 rounded-md text-xs overflow-x-auto">
+            <div className="mt-4 bg-muted p-3 rounded-md text-xs">
               <p className="font-medium mb-2">AI-Powered Matching Algorithm:</p>
               
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div>
                   <p className="font-medium">Artist matching (40% of score):</p>
                   <ul className="list-disc list-inside pl-2">
@@ -138,7 +136,7 @@ const CreationStep = ({
             </div>
           )}
           
-          <p className="mt-2 text-center">Songs with higher match percentage have better quality matches!</p>
+          <p className="mt-2">Songs with higher match percentage have better quality matches!</p>
         </div>
       </AnimatedCard>
     </motion.div>

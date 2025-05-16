@@ -16,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import LoadingIndicator from "./LoadingIndicator";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReviewStepProps {
   playlistTitle: string;
@@ -51,7 +50,6 @@ const ReviewStep = ({
   const [replacingSongId, setReplacingSongId] = useState<string | null>(null);
   const [replaceSearchQuery, setReplaceSearchQuery] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
-  const isMobile = useIsMobile();
 
   const selectedSongs = useMemo(() => songs.filter(song => song.selected), [songs]);
 
@@ -267,8 +265,8 @@ const ReviewStep = ({
       {/* Enhanced full-page overlay with loader when processing */}
       {aiProcessing && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center">
-          <div className="bg-white p-4 sm:p-8 rounded-lg shadow-xl max-w-md w-full mx-4 text-center">
-            <LoadingIndicator size={isMobile ? "md" : "lg"} text="Finding Spotify matches" />
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+            <LoadingIndicator size="lg" text="Finding Spotify matches" />
             
             <div className="mt-6 space-y-4">
               <h3 className="text-lg font-medium">Processing {unmatchedSongs} songs</h3>
@@ -299,18 +297,18 @@ const ReviewStep = ({
 
       <AnimatedCard>
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold">Review Matches</h2>
               <p className="text-sm text-muted-foreground">
                 Confirm song matches before creating your playlist
               </p>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" onClick={onBack} className="flex-1 sm:flex-auto">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onBack}>
                 Back
               </Button>
-              <Button onClick={handleContinue} className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-auto">
+              <Button onClick={handleContinue} className="bg-green-600 hover:bg-green-700">
                 Create Playlist
               </Button>
             </div>
@@ -339,7 +337,7 @@ const ReviewStep = ({
               Playlist Match Quality
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="bg-white/10 p-3 rounded-md">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Average Match</span>
@@ -362,7 +360,7 @@ const ReviewStep = ({
                   <span className="text-xs text-muted-foreground">Songs Selected</span>
                   <span className="text-lg font-bold">{selectedSongs.length}</span>
                 </div>
-                <div className="text-xs mt-2 flex flex-wrap gap-1">
+                <div className="text-xs mt-2 flex gap-1">
                   {selectedSongs.length > 0 && (
                     <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-500">
                       {Math.round((selectedSongs.length / songs.length) * 100)}% of library
@@ -391,7 +389,7 @@ const ReviewStep = ({
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+            <div className="flex flex-wrap gap-4 text-xs">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -450,7 +448,7 @@ const ReviewStep = ({
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs">
             <Filter className="h-4 w-4" />
             <span>Filter by match quality:</span>
             <div className="flex gap-1">
@@ -481,7 +479,7 @@ const ReviewStep = ({
             </div>
           </div>
           
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -492,11 +490,11 @@ const ReviewStep = ({
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <div className="flex gap-2 w-full">
+            <div className="flex gap-2 w-full md:w-auto">
               <Button 
                 onClick={handleSearch} 
                 disabled={loading} 
-                className="bg-green-600 hover:bg-green-700 flex-1"
+                className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
               >
                 <Plus className="mr-1 h-4 w-4" />
                 Add Song
@@ -507,19 +505,17 @@ const ReviewStep = ({
                 disabled={loading || unmatchedSongs === 0 || !onAIMatchAll || aiProcessing}
                 className={`${
                   aiProcessing ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
-                } flex-1`}
+                } w-full md:w-auto`}
               >
                 {aiProcessing ? (
                   <>
                     <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    <span className="hidden sm:inline">Processing...</span>
-                    <span className="sm:hidden">...</span>
+                    Processing...
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-1 h-4 w-4" />
-                    <span className="hidden sm:inline">AI Match ({unmatchedSongs})</span>
-                    <span className="sm:hidden">AI ({unmatchedSongs})</span>
+                    AI Match ({unmatchedSongs})
                   </>
                 )}
               </Button>
@@ -535,14 +531,13 @@ const ReviewStep = ({
                     ${song.isReplacement ? 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10' : 
                       song.manuallyApproved ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10' : 
                       'border-gray-100/10 bg-white/5 hover:bg-white/10'}`}>
-                    <div className="flex flex-col gap-3">
-                      {/* YouTube section */}
-                      <div className="flex items-start gap-3 w-full min-w-0">
+                    <div className="flex flex-col md:flex-row items-start gap-3">
+                      <div className="flex items-start gap-3 w-full md:w-[45%] min-w-0">
                         <div className="w-6 h-auto flex-shrink-0 mt-2">
                           <YoutubeIcon className="text-red-500 h-5 w-5" />
                         </div>
                         
-                        <div className="flex items-start gap-3 flex-1 min-w-0 pb-2 border-b sm:border-b-0 sm:pb-0 sm:pr-2 sm:border-r border-gray-200/20">
+                        <div className="flex items-start gap-3 flex-1 min-w-0 pr-2 border-gray-200/20 md:border-r">
                           {song.thumbnail ? (
                             <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
                               <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
@@ -588,8 +583,7 @@ const ReviewStep = ({
                         </div>
                       </div>
 
-                      {/* Match quality indicator for mobile */}
-                      <div className="flex sm:hidden justify-center items-center px-1 min-w-[60px] py-1">
+                      <div className="hidden md:flex flex-col items-center justify-center px-1 min-w-[60px]">
                         {song.isReplacement ? (
                           <div className="text-xs font-medium text-purple-500 flex items-center gap-1">
                             <RefreshCw className="h-3 w-3" />
@@ -601,15 +595,14 @@ const ReviewStep = ({
                             <span>Approved</span>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center">
+                          <>
                             <div className="text-sm font-medium">{song.matchConfidence || 0}%</div>
                             <MatchQualityIndicator confidence={song.matchConfidence} showPercentage={false} />
-                          </div>
+                          </>
                         )}
                       </div>
 
-                      {/* Spotify section */}
-                      <div className="flex items-start gap-3 w-full min-w-0">
+                      <div className="flex items-start gap-3 w-full md:w-[45%] min-w-0">
                         <div className="w-6 h-auto flex-shrink-0 mt-2">
                           <SpotifyIcon className="text-green-500 h-5 w-5" />
                         </div>
@@ -674,42 +667,42 @@ const ReviewStep = ({
                               )}
                             </div>
                           </div>
+                        </div>
 
-                          <div className="flex gap-1">
-                            {!song.manuallyApproved && !song.isReplacement && song.spotifyUri && (
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-muted-foreground hover:text-blue-500"
-                                onClick={() => handleManualApprove(song.id)}
-                                disabled={approvalLoading === song.id}
-                              >
-                                {approvalLoading === song.id ? (
-                                  <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 animate-spin rounded-full"></div>
-                                ) : (
-                                  <Check className="h-4 w-4" />
-                                )}
-                              </Button>
-                            )}
-                            {!song.spotifyUri && (
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-muted-foreground hover:text-blue-500"
-                                onClick={() => handleStartReplace(song.id)}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                            )}
+                        <div className="flex gap-1">
+                          {!song.manuallyApproved && !song.isReplacement && song.spotifyUri && (
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleRemoveSong(song.id)}
+                              className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                              onClick={() => handleManualApprove(song.id)}
+                              disabled={approvalLoading === song.id}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              {approvalLoading === song.id ? (
+                                <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 animate-spin rounded-full"></div>
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
                             </Button>
-                          </div>
+                          )}
+                          {!song.spotifyUri && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                              onClick={() => handleStartReplace(song.id)}
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleRemoveSong(song.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -727,7 +720,7 @@ const ReviewStep = ({
       </AnimatedCard>
       
       <Dialog open={showDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-md mx-4">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {replacingSongId ? "Replace Song" : "Add Song to Playlist"}
@@ -816,7 +809,7 @@ const ReviewStep = ({
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog} className="w-full sm:w-auto">
+            <Button variant="outline" onClick={handleCloseDialog}>
               Cancel
             </Button>
           </DialogFooter>
