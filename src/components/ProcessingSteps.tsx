@@ -1,12 +1,15 @@
 
 import { motion } from "framer-motion";
 import { ConversionStep } from "@/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProcessingStepsProps {
   currentStep: ConversionStep;
 }
 
 const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
+  const isMobile = useIsMobile();
+  
   const steps = [
     { id: ConversionStep.INPUT_URL, label: "Input URL" },
     { id: ConversionStep.EXTRACTING, label: "Extract Songs" },
@@ -36,7 +39,7 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
         {steps.map((step) => (
           <div key={step.id} className="z-10 flex flex-col items-center">
             <motion.div 
-              className={`w-8 h-8 rounded-full flex items-center justify-center mb-2
+              className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center mb-1 md:mb-2
                 ${step.id < currentStep 
                   ? 'bg-primary text-white' 
                   : step.id === currentStep 
@@ -49,15 +52,21 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
               }}
             >
               {step.id < currentStep ? (
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5 13L9 17L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               ) : (
                 <span className="text-xs">{step.id + 1}</span>
               )}
             </motion.div>
-            <span className={`text-xs ${step.id === currentStep ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-              {step.label}
+            <span className={`text-[0.6rem] md:text-xs whitespace-nowrap ${step.id === currentStep ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+              {isMobile ? (
+                <span className="inline-block max-w-[40px] truncate" title={step.label}>
+                  {step.id === currentStep ? step.label : ""}
+                </span>
+              ) : (
+                step.label
+              )}
             </span>
           </div>
         ))}
