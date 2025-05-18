@@ -73,19 +73,18 @@ const Index = () => {
   // Calculate the number of selected songs for CreationStep
   const selectedSongsCount = playlistData.songs.filter(song => song.selected).length;
   
-  return <div className="container mx-auto p-4 max-w-5xl">
-      <div className="space-y-8">
+  return (
+    <div className="container mx-auto px-3 md:px-4 max-w-5xl min-h-screen flex flex-col">
+      <div className="space-y-4 md:space-y-8 flex-grow">
         {/* Header component */}
         <Header />
         
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <ProcessingSteps currentStep={currentStep} />
-        </div>
+        <ProcessingSteps currentStep={currentStep} />
         
-        <div className="p-4 bg-white rounded-xl shadow-sm border">
+        <div className="p-3 md:p-4 bg-white rounded-xl shadow-sm border">
           {currentStep === ConversionStep.INPUT_URL && <UrlInput onSubmit={handleUrlSubmit} loading={loading} />}
           
-          {currentStep === ConversionStep.EXTRACTING && <ExtractionStep />}
+          {currentStep === ConversionStep.EXTRACTING && <ExtractionStep playlistSize={playlistData.songs.length} currentProgress={conversionProgress} />}
           
           {currentStep === ConversionStep.EDIT_SONGS && <SongEditStep songs={playlistData.songs} onUpdate={handleSongUpdate} onContinue={handleContinueToNaming} />}
           
@@ -101,7 +100,8 @@ const Index = () => {
 
       {/* Modal for first-time visitors */}
       <NewUserModal isOpen={showNewUserModal} onClose={() => setShowNewUserModal(false)} onExistingUser={handleExistingUser} />
-    </div>;
+    </div>
+  );
 };
 
 export default Index;

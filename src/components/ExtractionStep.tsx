@@ -24,12 +24,12 @@ const ExtractionStep = ({ playlistSize, currentProgress }: ExtractionStepProps) 
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <AnimatedCard className="flex flex-col items-center justify-center py-8 md:py-16">
+      <AnimatedCard className="flex flex-col items-center justify-center py-6 md:py-12">
         <LoadingIndicator 
           text="Extracting songs from YouTube" 
           size={isMobile ? "md" : "lg"} 
         />
-        <p className="mt-4 md:mt-6 text-muted-foreground text-xs md:text-sm text-center px-4">
+        <p className="mt-4 text-xs md:text-sm text-muted-foreground text-center px-4">
           {progressText}
         </p>
         <p className="text-[0.65rem] md:text-xs text-muted-foreground mt-2 text-center px-4">

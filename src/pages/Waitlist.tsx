@@ -84,18 +84,18 @@ const Waitlist = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-5xl">
-      <div className="space-y-8">
+    <div className="container mx-auto px-3 md:px-4 max-w-5xl min-h-screen flex flex-col">
+      <div className="space-y-4 md:space-y-8">
         <Header />
         
-        <div className="p-6 bg-white rounded-xl shadow-sm border">
+        <div className="p-4 md:p-6 bg-white rounded-xl shadow-sm border">
           <div className="max-w-md mx-auto">
-            <h1 className="text-2xl font-bold mb-2">Join the Waitlist</h1>
+            <h1 className="text-xl md:text-2xl font-bold mb-2">Join the Waitlist</h1>
             
-            <Alert className="mb-6 bg-blue-50 text-blue-800 border-blue-200">
+            <Alert className="mb-4 md:mb-6 bg-blue-50 text-blue-800 border-blue-200">
               <Info className="h-4 w-4" />
               <AlertTitle>Why a waitlist?</AlertTitle>
-              <AlertDescription>
+              <AlertDescription className="text-sm">
                 Due to Spotify API quota limitations, we can only support a limited number of users at a time. 
                 New users need to be manually approved by our team to ensure service quality for everyone.
                 Fill out the form below, and we'll notify you when you've been granted access.
@@ -103,7 +103,7 @@ const Waitlist = () => {
             </Alert>
             
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -127,7 +127,7 @@ const Waitlist = () => {
                       <FormControl>
                         <Input type="email" placeholder="you@example.com" {...field} />
                       </FormControl>
-                      <FormDescription>
+                      <FormDescription className="text-xs md:text-sm">
                         This must match the email you use for your Spotify account.
                       </FormDescription>
                       <FormMessage />

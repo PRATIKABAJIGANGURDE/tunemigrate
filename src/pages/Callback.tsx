@@ -98,14 +98,14 @@ const Callback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
       {error ? (
         <div className="text-center space-y-4 max-w-md">
-          <h2 className="text-xl font-bold text-red-600">Authentication Error</h2>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <h2 className="text-lg md:text-xl font-bold text-red-600">Authentication Error</h2>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 md:p-4 text-red-700 text-sm">
             <p>{error}</p>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             There was a problem authenticating with Spotify. Please try again.
           </p>
           <button
@@ -120,7 +120,7 @@ const Callback = () => {
                 navigate("/");
               }
             }}
-            className="text-primary font-medium hover:underline mt-2 inline-flex items-center"
+            className="text-primary font-medium hover:underline mt-2 inline-flex items-center text-sm"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
               <path d="m15 18-6-6 6-6"/>
@@ -129,10 +129,10 @@ const Callback = () => {
           </button>
         </div>
       ) : (
-        <div className="text-center space-y-6 max-w-md">
-          <h2 className="text-xl font-bold">Connecting to Spotify</h2>
-          <LoadingIndicator size="lg" />
-          <p className="text-muted-foreground">
+        <div className="text-center space-y-4 md:space-y-6 max-w-md">
+          <h2 className="text-lg md:text-xl font-bold">Connecting to Spotify</h2>
+          <LoadingIndicator size="md" />
+          <p className="text-muted-foreground text-sm">
             {processing ? "Please wait while we complete the authentication..." : "Redirecting you back to the app..."}
           </p>
         </div>

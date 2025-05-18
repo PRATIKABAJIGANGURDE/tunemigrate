@@ -20,7 +20,7 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
   ];
 
   return (
-    <div className="w-full my-8">
+    <div className="w-full my-6 md:my-8">
       <div className="flex justify-between w-full items-center relative">
         {/* Progress Bar Background */}
         <div className="absolute h-0.5 bg-muted w-full top-1/2 -translate-y-1/2 z-0" />
@@ -39,7 +39,7 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
         {steps.map((step) => (
           <div key={step.id} className="z-10 flex flex-col items-center">
             <motion.div 
-              className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center mb-1 md:mb-2
+              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center mb-1 md:mb-2
                 ${step.id < currentStep 
                   ? 'bg-primary text-white' 
                   : step.id === currentStep 
@@ -52,7 +52,7 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
               }}
             >
               {step.id < currentStep ? (
-                <svg className="w-3 h-3 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5 13L9 17L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               ) : (
@@ -61,9 +61,9 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
             </motion.div>
             <span className={`text-[0.6rem] md:text-xs whitespace-nowrap ${step.id === currentStep ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
               {isMobile ? (
-                <span className="inline-block max-w-[40px] truncate" title={step.label}>
-                  {step.id === currentStep ? step.label : ""}
-                </span>
+                step.id === currentStep ? (
+                  <span className="inline-block max-w-[40px] overflow-hidden text-ellipsis">{step.label}</span>
+                ) : null
               ) : (
                 step.label
               )}

@@ -30,14 +30,14 @@ const CreationStep = ({
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <AnimatedCard className="flex flex-col items-center justify-center py-8 md:py-16">
+      <AnimatedCard className="flex flex-col items-center justify-center py-6 md:py-12">
         <LoadingIndicator 
           text="Creating Spotify playlist" 
           size={isMobile ? "md" : "lg"} 
         />
         
         {progressPercent > 0 && (
-          <div className="w-full max-w-xs mt-4 md:mt-6 bg-gray-200 rounded-full h-2 md:h-2.5 dark:bg-gray-700">
+          <div className="w-full max-w-xs mt-4 bg-gray-200 rounded-full h-2 md:h-2.5 dark:bg-gray-700">
             <div 
               className="bg-primary h-2 md:h-2.5 rounded-full transition-all duration-300" 
               style={{ width: `${progressPercent}%` }}
@@ -45,14 +45,14 @@ const CreationStep = ({
           </div>
         )}
         
-        <p className="mt-2 md:mt-4 text-xs md:text-sm font-medium">
+        <p className="mt-2 text-xs md:text-sm font-medium">
           {progressPercent > 0 ? `${progressPercent}% complete` : ''}
         </p>
-        <p className="mt-1 md:mt-2 text-muted-foreground text-xs md:text-sm text-center px-2 md:px-4">
+        <p className="mt-1 text-muted-foreground text-xs md:text-sm text-center px-2 md:px-4">
           Finding and adding {selectedSongsCount} songs to "{playlistTitle}"
         </p>
         
-        <div className="text-[0.65rem] md:text-xs text-muted-foreground mt-3 md:mt-4 max-w-xs space-y-1 px-2 md:px-0">
+        <div className="text-[0.65rem] md:text-xs text-muted-foreground mt-3 max-w-xs space-y-1 px-2 md:px-0">
           <div className="flex items-center justify-between">
             <p className="font-medium">Smart matching in progress:</p>
             <Button 
@@ -65,7 +65,7 @@ const CreationStep = ({
             </Button>
           </div>
           
-          <ul className="list-disc list-inside space-y-1 md:space-y-2">
+          <ul className="list-disc list-inside space-y-1">
             <li className="flex items-start">
               <span className="inline-flex items-center">
                 <MusicIcon className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
@@ -93,10 +93,10 @@ const CreationStep = ({
           </ul>
 
           {showDetailedInfo && (
-            <div className="mt-3 md:mt-4 bg-muted p-2 md:p-3 rounded-md text-[0.65rem] md:text-xs">
-              <p className="font-medium mb-1 md:mb-2">AI-Powered Matching Algorithm:</p>
+            <div className="mt-3 bg-muted p-2 rounded-md text-[0.65rem] md:text-xs">
+              <p className="font-medium mb-1">AI-Powered Matching Algorithm:</p>
               
-              <div className="space-y-1 md:space-y-2">
+              <div className="space-y-1">
                 <div>
                   <p className="font-medium">Artist matching (40% of score):</p>
                   <ul className="list-disc list-inside pl-1 md:pl-2">
