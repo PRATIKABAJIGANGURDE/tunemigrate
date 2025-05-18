@@ -59,15 +59,19 @@ const ProcessingSteps = ({ currentStep }: ProcessingStepsProps) => {
                 <span className="text-xs">{step.id + 1}</span>
               )}
             </motion.div>
-            <span className={`text-[0.6rem] md:text-xs whitespace-nowrap ${step.id === currentStep ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-              {isMobile ? (
-                step.id === currentStep ? (
-                  <span className="inline-block max-w-[40px] overflow-hidden text-ellipsis">{step.label}</span>
-                ) : null
-              ) : (
-                step.label
-              )}
-            </span>
+            {isMobile ? (
+              step.id === currentStep ? (
+                <span className="text-[0.6rem] font-medium text-primary truncate max-w-[60px] text-center">
+                  {step.label}
+                </span>
+              ) : null
+            ) : (
+              <span className={`text-[0.6rem] md:text-xs whitespace-nowrap ${
+                step.id === currentStep ? 'font-medium text-primary' : 'text-muted-foreground'
+              }`}>
+                {step.label}
+              </span>
+            )}
           </div>
         ))}
       </div>
