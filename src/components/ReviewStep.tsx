@@ -684,16 +684,15 @@ const ReviewStep = ({
                               )}
                             </Button>
                           )}
-                          {!song.spotifyUri && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-muted-foreground hover:text-blue-500"
-                              onClick={() => handleStartReplace(song.id)}
-                            >
-                              <RefreshCw className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {/* Always show replace button, even for songs with Spotify matches */}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                            onClick={() => handleStartReplace(song.id)}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
